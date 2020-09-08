@@ -1,0 +1,29 @@
+{
+  "name": "curblr-digitizer",
+  "version": "1.0.0",
+  "description": "raw survey data -> CurbLR",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharedstreets/curblr-digitizer.git"
+  },
+  "author": "Emily Eros",
+  "contributors": [
+    "Emily Eros",
+    "Kevin Webb",
+    "Mollie McArdle",
+    "Morgan Herlocker",
+    "Peter Liu"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sharedstreets/curblr-digitizer/issues"
+  },
+  "homepage": "https://github.com/sharedstreets/curblr-digitizer#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {}
+}
