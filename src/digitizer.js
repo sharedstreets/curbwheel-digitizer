@@ -465,7 +465,7 @@ var app = {
 			// update regulations sheet heading
 			const vIndex = value.visualRange;
 
-			d3.select('#regulations .header')
+			d3.select('#regulations .currentTarget')
 				.attr('type', value.template)
 				.attr('inline', value.template ? undefined : `span${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
 
@@ -510,7 +510,7 @@ var app = {
 			}
 		}
 
-		else if (key === 'currentTimeSpansTarget') {
+		else if (key === 'currentTimeSpanTarget') {
 
 			const singleRowSelected = value.inlineRegulation>=0;
 
@@ -545,7 +545,7 @@ var app = {
 			const vIndex = value.visualRange;
 
 
-			d3.select('#timespans .header')
+			d3.select('#timespans .currentTarget')
 				.attr('type', value.template)
 				.attr('inline', value.template ? undefined : `regulation${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
 
@@ -554,7 +554,7 @@ var app = {
 				.text(existingTemplate ? 'Rename' : 'Make this a template')
 
 			d3.select('#timeSpanInput')
-				.property('value', existingTemplate ? value.template : '')
+				.property('value', value.template || '')
 
 		}
 
@@ -565,13 +565,13 @@ var app = {
 	ui:{
 
 		// when timespanslist changes, update inline or template
-		onChangedTimeSpans: () =>{
+		onChangedTimeSpans: () => {
 
 			setTimeout(() => {
 
 				var data = app.ui.timeSpansList.getSourceData();
 				var templateName = app.ui.regulationsList.getSourceDataAtCell(app.state.activeRegulationIndex, 5);
-				const cTT = app.state.currentTimeSpansTarget;
+				const cTT = app.state.currentTimeSpanTarget;
 				const singleRowSelected = !cTT.inlineRegulations;
 
 				// if one row selected, apply to template or inline as appropriate
@@ -613,7 +613,7 @@ var app = {
 			// if selecting multiple regs
 			else cTT.inlineRegulations = range
 			
-			app.setState('currentTimeSpansTarget', cTT)
+			app.setState('currentTimeSpanTarget', cTT)
 		
 		},
 
@@ -655,7 +655,7 @@ var app = {
 			if (e.which === 13) {
 
 				const text = e.target.value;
-				const cTT = app.state.currentTimeSpansTarget
+				const cTT = app.state.currentTimeSpanTarget
 
 				// throw on name collision
 				if (app.state.templates.timeSpans[text]) {
@@ -664,6 +664,8 @@ var app = {
 				}
 
 				e.target.blur();
+
+				var oldData = app.ui.regulationsList.getSourceData();
 
 				// if editing a template
 				if (cTT.template){
@@ -674,11 +676,10 @@ var app = {
 					app.state.templates.timeSpans[text] = app.state.templates.timeSpans[oldTemplateName] || [];
 					delete app.state.templates.timeSpans[oldTemplateName];
 
-					//change all references to old template, to new
-					var oldData = app.ui.timeSpansList.getSourceData();
-
+					//change all references of old template, to new
 					oldData.forEach(row=>{
-						if (row[5]===oldTemplateName) row[5] = text
+						console.log(row[5], oldTemplateName)
+						if (row.timeSpanTemplate===oldTemplateName) {console.log('oldnamefound, changing', row);row.timeSpanTemplate = text}
 					})
 
 				}
@@ -686,19 +687,31 @@ var app = {
 				// if creating a template from inline
 				else {
 
-					//create new template with whatever's currently in the regulationslist
-					app.state.templates.timeSpans[text] = app.ui.timeSpansList.getSourceData()
-					var oldData = app.ui.timeSpansList.getSourceData();
+					//create new template with whatever's currently in the timespansList
+					app.state.templates.timeSpans[text] = app.ui.timeSpansList.getSourceData();
 
-					if (cTT.inlineRegulations) for (var f=cTT.inlineRegulations[0]; f<=cTT.inlineRegulations[1]; f++) oldData[f][5] = text;
-					else oldData[cTT.inlineRegulations][5] = text;
+					// apply template to all selected regulations
+					const iRs = cTT.inlineRegulations;
+					if (iRs) for (var f=iRs[0]; f<=iRs[1]; f++) oldData[f].timeSpanTemplate = text;
+					else oldData[cTT.inlineRegulation].timeSpanTemplate = text;
+					console.log(oldData)
 
 				}
 
-				app.ui.timeSpansList.loadData(oldData);
-				app.ui.timeSpansList.render();
+				// apply name updates to the regulation store (template or inline)
+				const cRT = app.state.currentRegulationTarget;
+
+				if (cRT.template) app.state.templates.regulations[cRT.template] = oldData
+				else {
+					const iFs = cRT.inlineFeatures;
+					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) app.state.raw.regulations[f] = oldData
+					else app.state.raw.regulations[cRT.inlineFeature] = oldData
+				}
+				app.ui.regulationsList.loadData(oldData);
+				app.ui.regulationsList.render();
+				// console.log(oldData, cTT)
 				const newCTT = {template:text, rawRange:cTT.rawRange}
-				app.setState('currentTimeSpansTarget', cTT)
+				app.setState('currentTimeSpanTarget', newCTT)
 				app.ui.updateTemplateTypeahead('timeSpans')
 
 			}
@@ -746,7 +759,8 @@ var app = {
 					app.state.templates.regulations[text] = app.ui.regulationsList.getSourceData()
 					var oldData = app.ui.featuresList.getSourceData();
 
-					if (cRT.inlineFeatures) for (var f=cRT.inlineFeatures[0]; f<=cRT.inlineFeatures[1]; f++) oldData[f][4] = text;
+					const iFs = cRT.inlineFeatures
+					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) oldData[f][4] = text;
 					else oldData[cRT.inlineFeature][4] = text;
 
 				}
@@ -823,7 +837,7 @@ var app = {
 			defaultColumns[defaultColumns.length-1] = {
 				type: 'autocomplete',
 				source: extantTemplates,
-				className:'htCenter steelblue',
+				className:' steelblue',
 				placeholder: 'Unique values'
 			}
 			console.log(defaultColumns)
@@ -962,7 +976,7 @@ var app = {
 
 					{
 						type: 'text',
-						className:'htCenter steelblue',
+						className:' steelblue',
 						placeholder: 'Unique values'
 					}
 				],
@@ -998,7 +1012,7 @@ var app = {
 					{data: 'userSubClasses'},					
 					{
 						data: 'timeSpanTemplate',
-						className:'htCenter maroon',
+						className:' maroon',
 						placeholder: 'Unique values'
 					}
 				]

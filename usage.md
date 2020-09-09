@@ -2,7 +2,7 @@
 
 The data is a nested scheme consisting of a set of **spans**, each with a set of **regulations**, each with a set of **timespans**. These are represented as three separate spreadsheets in the interface. Going into the nested structure, we’ll call each successive set a *child*, and going out of the nest they are *parents*.
 
-As grandparent, the spans set is fixed, and behaves like a traditional spreadsheet. However, the other two sets display data  **contextually specific** to their currently-selected ancestors. 
+As grandparent, the spans set is fixed, and behaves like a traditional spreadsheet. However, the other two sets display data **contextually specific** to their currently-selected ancestors. 
 
 - Editing a set of regulations requires first selecting the proper span(s), and editing timespans requires selecting both span(s) and regulation(s). We'll call this *inline* editing, as the change is limited to specific selections.
 - The heading of each set indicates the current parents targeted. This helps ensure that we’re working with data for the intended parent (instead of an inadvertent uncle).

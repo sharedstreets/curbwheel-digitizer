@@ -26,25 +26,30 @@
 			    border-bottom:1px solid #aaa;
 			}
 
-			.section .header[inline]:after{
+			.currentTarget:after {
+				font-weight:bold;
+			}
+			.currentTarget[inline]:after{
 				content:attr(inline);
-    			font-weight: bold;				
 			}
 
-			.section .header[type]:after{
+			.currentTarget[type]:after{
 				content: attr(type);
 				padding: 4px 6px;
 				border-radius: 3px;
 				color: white !important;
-				font-weight: bold;
 				margin-left: 2px;
 			}
 
-			#regulations .header[type]:after{
+			.currentTarget[type]:before{
+				content:'template ';
+			}
+
+			#regulations .currentTarget[type]:after{
 				background:steelblue;
 			}
 
-			#timespans .header[type]:after{
+			#timespans .currentTarget[type]:after{
 				background:maroon;
 			}
 			.image {
@@ -196,19 +201,19 @@
 
 			.handsontable td.steelblue {
 				color:steelblue;
+				font-weight:bold;
 			}
 
-/*			.steelblue:before {
-				content:'⬤';
-			}*/
 			.handsontable td.maroon {
 				color:maroon;
+				font-weight: bold
 			}
 			
 			.handsontable .htPlaceholder {
 				color: #999 !important;
-				text-align: left;
+				/*text-align: left;*/
 				font-style: italic;
+				font-weight: 100 !important;
 			}
 		</style>
 	</head>
@@ -224,8 +229,9 @@
 			</div>
 			<div class='section' id='regulations'>
 				<div class='header p10'>
-					<span class='prompt'>☝ Regulations of</span> 
-					<span id='featureIndex' class='strong descriptor' style='color:steelblue'></span>
+					<span class='prompt'>☝ Regulations of</span>
+					<span class='currentTarget'></span> 
+					<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
 					<div class='fr'>
 						<span id='regulationPrompt' class='small quiet'>Make this a template</span>
 						<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
@@ -236,9 +242,11 @@
 			</div>
 			<div class='section' id='timespans'>
 				<div class='header p10' >
-					☝ Timespans of
-					<span id='regulationIndex' class='strong' style='color:maroon'></span>
-					<div class='fr'>
+						☝ Timespans of
+						<span class='currentTarget'></span> 
+
+<!-- 					<span id='regulationIndex' class='strong' style='color:maroon'></span>
+ -->					<div class='fr'>
 						<span id='timeSpanPrompt' class='small quiet'>Make this a template</span>
 						<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
 					</div>					
