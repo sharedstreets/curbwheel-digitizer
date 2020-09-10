@@ -1,7 +1,6 @@
 var app = {
 
 	state: {
-		activeFeatureIndex: 0,
 		templates: {
 			regulations: {},
 			timeSpans: {}
@@ -168,6 +167,7 @@ var app = {
 			}
 
 			setupFilter()
+			app.constants.allTimes= app.utils.makeTimes();
 
 			var featuresList = new Handsontable(
 
@@ -179,7 +179,7 @@ var app = {
 					width:'100%',
 					minRows:30,
 					rowHeaders: true,
-					colHeaders: app.constants.properties.concat('regulationsTemplate'),
+					colHeaders: app.constants.properties.concat('regulationTemplate'),
 					filters: true,
 					outsideClickDeselects: false,
 					autoWrapRow: false,
@@ -287,23 +287,17 @@ var app = {
 						16: null,
 						17: null,
 						18: null,
-						19: null,
-						20: null,
-						21: null,
-						22: null,
-						23: null
+						19: null
 					},
 					rowHeaders: true,
 					colHeaders: true,
 					nestedHeaders:[
 						[	
-							{label: 'timeOfDay', colspan:6},
+							{label: 'timeOfDay', colspan:2},
 							{label: 'Occurring each', colspan:17}
 						],
 
 						[
-							{label: 'span', colspan:2},
-							{label: 'span', colspan:2},
 							{label: 'span', colspan:2},
 							{label: 'week', colspan:7},
 							{label: 'month', colspan:6},
@@ -313,8 +307,6 @@ var app = {
 						
 						[
 							'start', 'end',
-							'start', 'end',
-							'start', 'end',
 							...app.constants.validate.daysOfWeek.oneOf,
 							...app.constants.validate.occurrencesInMonth.oneOf,
 							'from', 'to',
@@ -322,11 +314,14 @@ var app = {
 						]
 						
 					],
-					columns: new Array(6).fill({
-							type: 'time',
-							timeFormat: 'HH:mm',
-							correctFormat: true,
-							width:80
+
+					columns: new Array(2).fill({
+							type: 'autocomplete',
+							placeholder:'24h hh:mm',
+							source: app.constants.allTimes,
+							visibleRows: 5,
+							filter:true,
+							strict:true
 						})
 						.concat(
 							app.constants.validate.daysOfWeek.oneOf
@@ -351,8 +346,7 @@ var app = {
 							.map(endpoint=>{
 								return {
 									// data: endpoint,
-									type: 'text',
-									width:80
+									type: 'date'
 								}
 							})
 						)
@@ -370,7 +364,6 @@ var app = {
 					collapsibleColumns: app.constants.timeSpansCollapsingScheme,
 					stretchH: 'all',
 					licenseKey: 'non-commercial-and-evaluation',
-
 					afterSetDataAtCell: app.ui.onChangedTimeSpans
 				}
 			)
@@ -435,9 +428,12 @@ var app = {
 			app.ui.timeSpansList = timeSpansList;
 
 			app.constants.timeSpansCollapsingScheme
-				.forEach(item => timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
+				// .forEach(item => timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
 			
-			app.ui.map.on('load', ()=>featuresList.selectCell(0,0,0,0))
+			app.ui.map.on('load', ()=>{
+				featuresList.selectCell(0,0,0,0)
+				regulationsList.selectCell(0,0,0,0)
+			})
 
 		}
 	},
@@ -458,8 +454,8 @@ var app = {
 			else if (value.inlineFeatures) regulationToRender = [];
 
 			// console.log('new regs', regulationToRender)
-			app.ui.regulationsList.loadData(JSON.parse(JSON.stringify(regulationToRender)))
-			app.ui.regulationsList.render();
+			app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
+			// app.ui.regulationsList.render();
 
 
 			// update regulations sheet heading
@@ -534,13 +530,6 @@ var app = {
 			
 			else if (value.inlineRegulations) timeSpanToRender = [];
 
-			// render new timespans data and collapse table
-			app.ui.timeSpansList.loadData(JSON.parse(JSON.stringify(timeSpanToRender)))
-			app.ui.timeSpansList.render();
-
-			app.constants.timeSpansCollapsingScheme
-				.forEach(item => app.ui.timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
-
 			// update regulations sheet heading
 			const vIndex = value.visualRange;
 
@@ -556,6 +545,14 @@ var app = {
 			d3.select('#timeSpanInput')
 				.property('value', value.template || '')
 
+
+			// render new timespans data and collapse table
+			app.ui.timeSpansList.loadData(app.utils.clone(timeSpanToRender))
+			// app.ui.timeSpansList.render();
+
+			app.constants.timeSpansCollapsingScheme
+				.forEach(item => app.ui.timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
+
 		}
 
 
@@ -563,6 +560,34 @@ var app = {
 	},
 
 	ui:{
+
+		formatTime: (input) => {
+			console.log('ft')
+			const split = input.split(':');
+			const fail = ()=>{alert('Time must be in 24-hour, HH:MM format'); return}
+
+			if (split.length === 2){
+				
+				//convert to numbers		
+				const numbers = split.map(n=>parseFloat(n));
+
+				//cap and add leading zeroes
+
+				const capped = numbers.map((d,i)=>{
+
+					if (!d>=0) fail()
+					else if (i===0 && d>23) fail()
+					else if (i===1 && d>59) fail()
+
+					else if (d<10) d='0'+d;	
+
+					return d
+				})
+
+				return capped.join(':')
+			}
+
+		},
 
 		// when timespanslist changes, update inline or template
 		onChangedTimeSpans: () => {
@@ -708,8 +733,8 @@ var app = {
 					else app.state.raw.regulations[cRT.inlineFeature] = oldData
 				}
 				app.ui.regulationsList.loadData(oldData);
-				app.ui.regulationsList.render();
-				// console.log(oldData, cTT)
+				// app.ui.regulationsList.render();
+
 				const newCTT = {template:text, rawRange:cTT.rawRange}
 				app.setState('currentTimeSpanTarget', newCTT)
 				app.ui.updateTemplateTypeahead('timeSpans')
@@ -767,7 +792,7 @@ var app = {
 
 				console.log(oldData)
 				app.ui.featuresList.loadData(oldData);
-				app.ui.featuresList.render();
+				// app.ui.featuresList.render();
 				const newCRT = {template:text, rawRange:cRT.rawRange}
 				app.setState('currentRegulationTarget', newCRT)
 				app.ui.updateTemplateTypeahead('regulations')
@@ -832,7 +857,7 @@ var app = {
 				timeSpans: 'regulationsList'
 			}
 
-			var defaultColumns = JSON.parse(JSON.stringify(app.constants.ui.tableColumns[parentList[templateType]]));
+			var defaultColumns = app.utils.clone(app.constants.ui.tableColumns[parentList[templateType]]);
 
 			defaultColumns[defaultColumns.length-1] = {
 				type: 'autocomplete',
@@ -913,7 +938,7 @@ var app = {
 						// but if it changes to a new template, copy over the template from old to new
 						else if (toNewTemplate) {
 							cT.template = newValue;
-							app.state.templates[templateType][newValue] = JSON.parse(JSON.stringify(app.state.templates[templateType][oldValue]))
+							app.state.templates[templateType][newValue] = app.utils.clone(app.state.templates[templateType][oldValue]);
 						}
 					}
 				
@@ -924,6 +949,24 @@ var app = {
 				})
 
 			app.ui.updateTemplateTypeahead(templateType)
+		}
+	},
+
+	utils: {
+		clone: (input) => JSON.parse(JSON.stringify(input)),
+		makeTimes: ()=>{
+
+			var output = [];
+			for (var h = 0; h<24; h++) {
+				const hour = h<10 ? '0'+h : h
+
+				for (var m=0; m<60; m+=5){
+					const minute = m<10 ? '0'+m : m
+					output.push([hour, minute].join(':'))
+				}
+			}
+
+			return output
 		}
 	},
 	constants: {
@@ -1022,11 +1065,11 @@ var app = {
 					range: {
 					from: {
 						row: 0,
-						col: 6
+						col: 2
 					},
 					to: {
 						row: 99999,
-						col: 6
+						col: 2
 					}
 					},
 					left: {
@@ -1038,11 +1081,11 @@ var app = {
 					range: {
 					from: {
 						row: 0,
-						col: 13
+						col: 9
 					},
 					to: {
 						row: 99999,
-						col: 13
+						col: 9
 					}
 					},
 					left: {
@@ -1054,11 +1097,11 @@ var app = {
 					range: {
 					from: {
 						row: 0,
-						col: 19
+						col: 15
 					},
 					to: {
 						row: 99999,
-						col: 19
+						col: 15
 					}
 					},
 					left: {
@@ -1070,11 +1113,11 @@ var app = {
 					range: {
 					from: {
 						row: 0,
-						col: 21
+						col: 17
 					},
 					to: {
 						row: 99999,
-						col: 21	
+						col: 17
 					}
 					},
 					left: {
@@ -1352,8 +1395,7 @@ var app = {
 		},
 
 		timeSpansCollapsingScheme: [
-			{row: -3, col: 0, collapsible: true},
-			{row: -3, col: 6, collapsible: true}
+			{row: -3, col: 2, collapsible: true}
 		],
 		regulation: {
 
