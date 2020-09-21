@@ -9,7 +9,9 @@ var app = {
 		raw: {
 			regulations:[],
 			timeSpans: {}
-		}
+		},
+
+		currentTimeSpanTarget: {}
 	},
 
 	// io: {
@@ -192,7 +194,7 @@ var app = {
 					afterChange: (changes) => {
 
 						if (changes) {
-							
+							console.log('ac', changes[0])
 							var assetSubtypeWasChanged = changes
 								.map(change => change[1])
 								.some(col => col === 2)
@@ -225,27 +227,36 @@ var app = {
 
 					data: [],
 
-					dataSchema: {
-						activity:null, 
-						maxStay: null, 
-						payment:false, 
-						userClasses: null, 
-						userSubClasses: null, 
-						timeSpanTemplate:null
-					},
-
+					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.regulationsList.map(r=>r.data)),
 					minRows:30,
 					rowHeaders: true,
-					colHeaders: app.constants.ui.regulationParams.map(p=>p.param),
+					nestedHeaders:[
+						[	
+							{label: 'Payment', colspan:7, width:200},
+							{label: 'Properties', colspan:6}
+						],
+						app.constants.ui.tableColumns.regulationsList.map(r=>r.data)
+					],
+					collapsibleColumns: app.constants.regulationsCollapsingScheme,
+
+					// colHeaders: app.constants.ui.tableColumns.regulationsList.map(r=>r.data),
+					columns: app.constants.ui.tableColumns.regulationsList,
 					outsideClickDeselects: false,
 					autoWrapRow: false,
-					columns: app.constants.ui.tableColumns.regulationsList,
 
 
 					afterChange: (changes) => {
 
 						if (changes) {
-	
+
+							console.log('ac')
+							var paymentWasChanged = changes
+								.map(change => change[1])
+								.some(col => col === 'payment')
+
+							//propagate assetType to assetSubType
+							if (paymentWasChanged) app.ui.updateRegulationsListSettings()
+
 							app.ui.onChangedRegulations()
 
 							// isolate changes to the timespan template
@@ -375,6 +386,36 @@ var app = {
 			d3.select('#timeSpanInput')
 				.on('keyup', e=>app.ui.updateTimeSpanInput(event))
 
+			// const updateRegulationsListSettings = (changes) => {
+
+			// 	var data = regulationsList.getSourceData();
+			// 	var cellsToClear = []
+			// 	console.log('before', data[0])
+			// 	regulationsList.updateSettings({
+
+			// 		cells: (row, col, prop) => {
+
+			// 			var cellProperties = {}
+			// 			const thereIsPayment = data[row].payment;
+	  //   				const propagationTargets = ['rates', 'durations', 'methods', 'forms', 'phone', 'operator']
+						
+			// 			// if currently at a propagated column
+			// 		    if (propagationTargets.includes(prop)) {
+			// 				cellProperties = {
+			// 					readOnly:!thereIsPayment
+			// 				}
+
+			// 		    	if (!thereIsPayment) data[row][prop] = undefined		
+	
+			// 		    }
+
+			// 		    return cellProperties;
+			// 		}
+			// 	})
+
+			// 	regulationsList.loadData(data)
+			// }
+
 			const updateFeaturesListSettings = (changes) =>{
 
 				var data = featuresList.getSourceData();
@@ -445,6 +486,7 @@ var app = {
 		if (key === 'currentRegulationTarget') {
 
 			const singleRowSelected = value.inlineFeature>=0;
+
 			// UPDATE REGULATIONS SHEET
 			var regulationToRender;
 			const existingTemplate = app.state.templates.regulations[value.template];
@@ -453,9 +495,7 @@ var app = {
 			else if (singleRowSelected) regulationToRender = app.state.raw.regulations[value.inlineFeature] || []
 			else if (value.inlineFeatures) regulationToRender = [];
 
-			// console.log('new regs', regulationToRender)
 			app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
-			// app.ui.regulationsList.render();
 
 
 			// update regulations sheet heading
@@ -533,7 +573,6 @@ var app = {
 			// update regulations sheet heading
 			const vIndex = value.visualRange;
 
-
 			d3.select('#timespans .currentTarget')
 				.attr('type', value.template)
 				.attr('inline', value.template ? undefined : `regulation${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
@@ -595,7 +634,7 @@ var app = {
 			setTimeout(() => {
 
 				var data = app.ui.timeSpansList.getSourceData();
-				var templateName = app.ui.regulationsList.getSourceDataAtCell(app.state.activeRegulationIndex, 5);
+				var templateName = app.ui.regulationsList.getSourceDataAtCell(app.state.activeRegulationIndex, 12);
 				const cTT = app.state.currentTimeSpanTarget;
 				const singleRowSelected = !cTT.inlineRegulations;
 
@@ -611,7 +650,7 @@ var app = {
 					const range = cTT.inlineRegulations;
 					for (var f = range[0]; f<=range[1]; f++) {
 						app.state.raw.timeSpans[f] = data
-						app.ui.regulationsList.setSourceDataAtCell(f, 5, undefined)
+						app.ui.regulationsList.setSourceDataAtCell(f, 12, undefined)
 					}
 				}
 
@@ -627,19 +666,21 @@ var app = {
 
 			var cTT = {rawRange:range, visualRange:range}
 
-			
-			// if selected a single regulation
-			if (row === row2) {
-				const templateName = app.ui.regulationsList.getSourceDataAtCell(row, 5)
-				if (templateName) cTT.template = templateName;
-				else cTT.inlineRegulation = row
+			const newRowsSelected = JSON.stringify(app.state.currentTimeSpanTarget.rawRange) !== JSON.stringify(cTT.rawRange)
+			if (newRowsSelected) {
+				// if selected a single regulation
+				if (row === row2) {
+					const templateName = app.ui.regulationsList.getSourceDataAtCell(row, 12)
+					if (templateName) cTT.template = templateName;
+					else cTT.inlineRegulation = row
+				}
+
+				// if selecting multiple regs
+				else cTT.inlineRegulations = range
+				app.setState('currentTimeSpanTarget', cTT)
+				
 			}
 
-			// if selecting multiple regs
-			else cTT.inlineRegulations = range
-			
-			app.setState('currentTimeSpanTarget', cTT)
-		
 		},
 
 		// whenever regulationsList changes, apply change to the right place
@@ -654,7 +695,6 @@ var app = {
 				
 				// if single row, change the template or inline regulations directly
 				if (singleRowSelected) {
-					console.log(cRT)
 					if (cRT.template) app.state.templates.regulations[cRT.template] = data
 					
 					else app.state.raw.regulations[cRT.inlineFeature] = data;
@@ -703,7 +743,7 @@ var app = {
 
 					//change all references of old template, to new
 					oldData.forEach(row=>{
-						console.log(row[5], oldTemplateName)
+						console.log(row[12], oldTemplateName)
 						if (row.timeSpanTemplate===oldTemplateName) {console.log('oldnamefound, changing', row);row.timeSpanTemplate = text}
 					})
 
@@ -844,8 +884,38 @@ var app = {
 
 			
 			app.setState('currentRegulationTarget', cRT)
+			app.ui.updateRegulationsListSettings()
 		},
 
+		updateRegulationsListSettings: (changes) => {
+
+			var data = app.ui.regulationsList.getSourceData();
+			var cellsToClear = []
+			console.log('before', data[0])
+			app.ui.regulationsList.updateSettings({
+
+				cells: (row, col, prop) => {
+
+					var cellProperties = {}
+					const thereIsPayment = data[row].payment;
+    				const propagationTargets = ['rates', 'durations', 'methods', 'forms', 'phone', 'operator']
+					
+					// if currently at a propagated column
+				    if (propagationTargets.includes(prop)) {
+						cellProperties = {
+							readOnly:!thereIsPayment
+						}
+
+				    	if (!thereIsPayment) data[row][prop] = undefined		
+
+				    }
+
+				    return cellProperties;
+				}
+			})
+
+			app.ui.regulationsList.loadData(data)
+		},
 		updateTemplateTypeahead: (templateType)=>{
 
 			// TODO: make this work for timespan templates		
@@ -953,6 +1023,8 @@ var app = {
 	},
 
 	utils: {
+
+		arrayToNullObj: (array) =>Object.fromEntries(array.map(p=>[p, null])),
 		clone: (input) => JSON.parse(JSON.stringify(input)),
 		makeTimes: ()=>{
 
@@ -1026,6 +1098,35 @@ var app = {
 
 				regulationsList: [
 					{
+						data: 'payment',
+						type: 'checkbox',
+						width:60
+					},	
+					{
+						data: 'rates',
+						readOnly: true
+					},
+					{
+						data: 'durations',
+						readOnly: true
+					},
+					{
+						data: 'methods',
+						readOnly: true
+					},
+					{
+						data: 'forms',
+						readOnly: true
+					},
+					{
+						data: 'phone',
+						readOnly: true
+					},
+					{
+						data: 'operator',
+						readOnly: true
+					},
+					{
 						type: 'dropdown',
 						data: 'activity',
 						source: [
@@ -1046,13 +1147,9 @@ var app = {
 						strict: true,
 						visibleRows: 15
 					},
-					{
-						data: 'payment',
-						type: 'checkbox',
-						width:60
-					},	
 					{data: 'userClasses'},
 					{data: 'userSubClasses'},					
+					{data: 'priorityCategory'},					
 					{
 						data: 'timeSpanTemplate',
 						className:' maroon',
@@ -1196,30 +1293,6 @@ var app = {
 					defaultHidden: true
 				}					
 
-			],
-
-			regulationParams: [
-				{
-					param: 'activity'
-				},	
-				{
-					param: 'maxStay'
-				},	
-				{
-					param: 'payment'
-				},
-				{
-					param: 'userClasses',
-					placeholder: 'Comma-delimited values'
-				},
-				{
-					param: 'userSubClasses',
-					placeholder: 'Comma-delimited values'
-				},
-				{
-					param: 'timeSpanTemplate',
-					placeholder: 'Unique value'
-				}
 			],
 
 			timeSpanParams: [
@@ -1396,6 +1469,9 @@ var app = {
 
 		timeSpansCollapsingScheme: [
 			{row: -3, col: 2, collapsible: true}
+		],
+		regulationsCollapsingScheme: [
+			{row:-2, col:0, collapsible:true}
 		],
 		regulation: {
 
