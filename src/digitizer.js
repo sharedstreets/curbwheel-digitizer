@@ -14,36 +14,119 @@ var app = {
 		currentTimeSpanTarget: {}
 	},
 
-	// io: {
+	io: {
 
-	// 	export: () => {
+		resolveTemplateReference: (templateType, obj, indices)=>{
 
-	// 		app.state.data.features = app.state.data.features.map(ft => {
+			const paramName = `${templateType}Template`;
+			const value = obj[paramName];
+			const inlineValue = typeof value === 'string';
 
-	// 			ft = {
-	// 				geometry: ft.geometry,
-	// 				properties: ft.output
-	// 			}
+			var output;
+			if (inlineValue) output = app.state.templates[templateType+'s'][value]
 
-	// 			return ft
-	// 		})
+			else {
+				if (indices.length===1) output = app.state.raw[templateType+'s'][indices[0]]
+				else output = app.state.raw[templateType+'s'][indices[0]][indices[1]]
+			}
 
-	// 		var element = document.createElement('a');
+			output = output || []
+			delete obj[paramName];
+			return output
+		},
 
-	// 		const blob = new Blob([JSON.stringify(app.state.data)], {type: "application/json"});
-	// 		var url = window.URL.createObjectURL(blob);
+		export: () => {
+
+			const featuresData = app.ui.featuresList.getSourceData();
+
+			var exportedData = app.utils.clone(app.state.data).features.map((ft,i) => {
+
+				var regs = app.io.resolveTemplateReference('regulation', featuresData[i], [i]);
+				
+				regs.forEach((regulation, rIndex)=>{
+					regulation.timeSpans = app.io.resolveTemplateReference('timeSpan', regulation, [i, rIndex])
+				})
+
+				ft.properties.output = {
+					location: app.utils.combineObjects(ft.output.location, featuresData[i]),
+					regulations: regs.map((reg, rIndex) => {
+
+						var output = {
+
+							timeSpans: reg.timeSpans.map(span => {
+
+								var output = {
+
+									//form arrays of daysOfWeek and month occurrences
+									daysOfWeek: {
+										days: app.constants.daysOfWeek.filter(day=>span[day]),
+										occurrencesInMonth: app.constants.occurrencesInMonth.filter(occ=>span[occ])
+									},
+
+									//single pair of from-to times
+									timesOfDay:[{
+										from: span.start,
+										to: span.end
+									}],
+
+									effectiveDates:[{
+										from: span.from,
+										to: span.end
+									}]
+								}
+
+								return output
+							}),
+
+							payment: !reg.payment ? undefined : {
+								rates: reg.rates,
+								durations: reg.durations,
+								methods: reg.methods,
+								forms: reg.forms,
+								phone: reg.phone,
+								operator: reg.operator
+							},
+
+							rule: {
+								activity: reg.activity,
+								maxStay: reg.maxStay,
+								userClasses: reg.userClasses,
+								userSubClasses: reg.userSubClasses,
+								priorityCategory: reg.priorityCategory,
+								payment: reg.payment
+							}
+						}
+
+						return output
+					})
+				}
+
+				ft.properties = ft.properties.output
+				delete ft.output;
+				return ft
+			})
+
+			exportedData = {
+				"type": "FeatureCollection",
+				"features": exportedData
+			}
+
+			var element = document.createElement('a');
+
+			const blob = new Blob([JSON.stringify(exportedData)], {type: "application/json"});
+			var url = window.URL.createObjectURL(blob);
 			
-	// 		element.setAttribute('href', url);
-	// 		element.setAttribute('download', 'curblr_'+Date.now()+'.json');
+			element.setAttribute('href', url);
+			element.setAttribute('download', 'curblr_'+Date.now()+'.json');
 
-	// 		element.style.display = 'none';
-	// 		document.body.appendChild(element);
+			element.style.display = 'none';
+			document.body.appendChild(element);
 
-	// 		element.click();
-	// 	    document.body.removeChild(element);
-	// 	}
+			element.click();
+		    document.body.removeChild(element);
+		}
 
-	// },
+	},
 
 
 	init: {
@@ -128,8 +211,6 @@ var app = {
 
 			})
 
-			var data = app.state.data.features
-					.map((f,i)=>[f.properties.label, f.properties.ref_side, undefined, undefined, undefined])
 			
 			// BUILD FILTERS
 
@@ -169,7 +250,21 @@ var app = {
 			}
 
 			setupFilter()
-			app.constants.allTimes= app.utils.makeTimes();
+			app.constants.ui.tableColumns.timeSpansList[0].source=
+			app.constants.ui.tableColumns.timeSpansList[1].source=
+			app.utils.makeTimes();
+
+			// form features data for table
+			var data = app.state.data.features
+				.map((f,i)=>{
+
+					const p = f.properties;
+
+					var output = {};
+					const featuresList = app.constants.ui.tableColumns.featuresList
+					for (key of featuresList.map(c=>c.data)) output[key] = p[key]
+					return output
+				})
 
 			var featuresList = new Handsontable(
 
@@ -181,7 +276,7 @@ var app = {
 					width:'100%',
 					minRows:30,
 					rowHeaders: true,
-					colHeaders: app.constants.properties.concat('regulationTemplate'),
+					colHeaders: app.constants.ui.tableColumns.featuresList.map(c=>c.data),
 					filters: true,
 					outsideClickDeselects: false,
 					autoWrapRow: false,
@@ -194,7 +289,7 @@ var app = {
 					afterChange: (changes) => {
 
 						if (changes) {
-							console.log('ac', changes[0])
+
 							var assetSubtypeWasChanged = changes
 								.map(change => change[1])
 								.some(col => col === 2)
@@ -278,28 +373,7 @@ var app = {
 				{
 					minRows:30,
 					width:'100%',
-					dataSchema: {
-						0: null,
-						1: null,
-						2: null,
-						3: null,
-						4: null,
-						5: null,
-						6: null,
-						7: null,
-						8: null,
-						9: null,
-						10: null,
-						11: null,
-						12: null,
-						13: null,
-						14: null,
-						15: null,
-						16: null,
-						17: null,
-						18: null,
-						19: null
-					},
+					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.timeSpansList.map(r=>r.data)),
 					rowHeaders: true,
 					colHeaders: true,
 					nestedHeaders:[
@@ -316,60 +390,11 @@ var app = {
 							{label: 'event', colspan:2},
 						],
 						
-						[
-							'start', 'end',
-							...app.constants.validate.daysOfWeek.oneOf,
-							...app.constants.validate.occurrencesInMonth.oneOf,
-							'from', 'to',
-							'apply', 'event'
-						]
+						app.constants.ui.tableColumns.timeSpansList.map(t=>t.data)
 						
 					],
 
-					columns: new Array(2).fill({
-							type: 'autocomplete',
-							placeholder:'24h hh:mm',
-							source: app.constants.allTimes,
-							visibleRows: 5,
-							filter:true,
-							strict:true
-						})
-						.concat(
-							app.constants.validate.daysOfWeek.oneOf
-								.map(day=>{
-									return {
-										// data: day,
-										type: 'checkbox',
-										width:50
-									}
-								})
-						)
-						.concat(app.constants.validate.occurrencesInMonth.oneOf
-							.map(occurrence=>{
-								return {
-									// data: occurrence,
-									type: 'checkbox',
-									width:50
-								}
-							})
-						)
-						.concat(['from', 'to']
-							.map(endpoint=>{
-								return {
-									// data: endpoint,
-									type: 'date'
-								}
-							})
-						)
-						.concat(['apply', 'event']
-							.map(item=>{
-								return {
-									// data: item,
-									type: 'text',
-									width:80
-								}
-							})
-						),
+					columns: app.constants.ui.tableColumns.timeSpansList,
 					customBorders: app.constants.ui.timeSpanBorderScheme,
 
 					collapsibleColumns: app.constants.timeSpansCollapsingScheme,
@@ -386,35 +411,6 @@ var app = {
 			d3.select('#timeSpanInput')
 				.on('keyup', e=>app.ui.updateTimeSpanInput(event))
 
-			// const updateRegulationsListSettings = (changes) => {
-
-			// 	var data = regulationsList.getSourceData();
-			// 	var cellsToClear = []
-			// 	console.log('before', data[0])
-			// 	regulationsList.updateSettings({
-
-			// 		cells: (row, col, prop) => {
-
-			// 			var cellProperties = {}
-			// 			const thereIsPayment = data[row].payment;
-	  //   				const propagationTargets = ['rates', 'durations', 'methods', 'forms', 'phone', 'operator']
-						
-			// 			// if currently at a propagated column
-			// 		    if (propagationTargets.includes(prop)) {
-			// 				cellProperties = {
-			// 					readOnly:!thereIsPayment
-			// 				}
-
-			// 		    	if (!thereIsPayment) data[row][prop] = undefined		
-	
-			// 		    }
-
-			// 		    return cellProperties;
-			// 		}
-			// 	})
-
-			// 	regulationsList.loadData(data)
-			// }
 
 			const updateFeaturesListSettings = (changes) =>{
 
@@ -587,10 +583,12 @@ var app = {
 
 			// render new timespans data and collapse table
 			app.ui.timeSpansList.loadData(app.utils.clone(timeSpanToRender))
-			// app.ui.timeSpansList.render();
 
 			app.constants.timeSpansCollapsingScheme
 				.forEach(item => app.ui.timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
+
+			app.constants.regulationsCollapsingScheme
+				.forEach(item => app.ui.regulationsList.getPlugin('collapsibleColumns').collapseSection(item))
 
 		}
 
@@ -891,17 +889,15 @@ var app = {
 
 			var data = app.ui.regulationsList.getSourceData();
 			var cellsToClear = []
-			console.log('before', data[0])
 			app.ui.regulationsList.updateSettings({
 
 				cells: (row, col, prop) => {
 
 					var cellProperties = {}
 					const thereIsPayment = data[row].payment;
-    				const propagationTargets = ['rates', 'durations', 'methods', 'forms', 'phone', 'operator']
 					
 					// if currently at a propagated column
-				    if (propagationTargets.includes(prop)) {
+				    if (app.constants.paymentParams.includes(prop)) {
 						cellProperties = {
 							readOnly:!thereIsPayment
 						}
@@ -1023,7 +1019,10 @@ var app = {
 	},
 
 	utils: {
-
+		combineObjects: (a,b) => {
+			Object.keys(b).forEach(key=>a[key]=b[key]);
+			return a
+		},
 		arrayToNullObj: (array) =>Object.fromEntries(array.map(p=>[p, null])),
 		clone: (input) => JSON.parse(JSON.stringify(input)),
 		makeTimes: ()=>{
@@ -1041,21 +1040,20 @@ var app = {
 			return output
 		}
 	},
+
 	constants: {
-
-		properties: [
-			'label',
-			'sideOfStreet',
-			'assetType',
-			'assetSubtype'
-		],
-
+		paymentParams: ['rates', 'durations', 'methods', 'forms', 'phone', 'operator'],
+		daysOfWeek: ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'],
+		occurrencesInMonth: ['1st', '2nd', '3rd', '4th', '5th', 'last'],
 		ui: {
 			tableColumns: {
 
 				featuresList:[
-					{},
 					{
+						data: 'label'
+					},
+					{
+						data: 'ref_side',
 						type: 'dropdown',
 						source: ['left', 'right', 'unknown'],
 						strict: true,
@@ -1063,6 +1061,7 @@ var app = {
 						visibleRows: 4
 					},
 					{
+						data: 'assetType',
 						type: 'autocomplete',
 						source: [
 							'sign', 
@@ -1083,6 +1082,7 @@ var app = {
 						visibleRows: 20,
 					},					
 					{
+						data: 'assetSubtype',
 						type: 'autocomplete',
 						readOnly: true,
 						placeholder: 'NA',
@@ -1090,6 +1090,7 @@ var app = {
 					},
 
 					{
+						data: 'regulationTemplate',
 						type: 'text',
 						className:' steelblue',
 						placeholder: 'Unique values'
@@ -1155,7 +1156,61 @@ var app = {
 						className:' maroon',
 						placeholder: 'Unique values'
 					}
+				],
+				timeSpansList: [
+					{
+						data:'start',
+						type: 'autocomplete',
+						placeholder:'24h hh:mm',
+						visibleRows: 5,
+						filter:true,
+						strict:true
+					},
+					{
+						data:'end',
+						type: 'autocomplete',
+						placeholder:'24h hh:mm',
+						visibleRows: 5,
+						filter:true,
+						strict:true
+					},
 				]
+				.concat(
+					['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su']
+						.map(day=>{
+							return {
+								data: day,
+								type: 'checkbox',
+								width:50
+							}
+						})
+				)
+				.concat(['1st', '2nd', '3rd', '4th', '5th', 'last']
+					.map(occurrence=>{
+						return {
+							data: occurrence,
+							type: 'checkbox',
+							width:50
+						}
+					})
+				)
+				.concat(['from', 'to']
+					.map(endpoint=>{
+						return {
+							data: endpoint,
+							type: 'date'
+						}
+					})
+				)
+				.concat(['apply', 'event']
+					.map(item=>{
+						return {
+							data: item,
+							type: 'text',
+							width:80
+						}
+					})
+				)
 			},
 			timeSpanBorderScheme: [
 				{

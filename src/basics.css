@@ -93,6 +93,11 @@ input[type=number] {
 	bottom:0;
 }
 
+.pin-topright {
+	position:absolute;
+	top:0;
+	right:0;
+}
 /*paddings*/
 .p10 {
 	padding:10px;
