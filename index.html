@@ -20,12 +20,32 @@
 			#dataPanel {
 				border-right:1px solid #ccc;
 			}
+
 			.section {
 				height:33.33333%;
 			    position: relative;
 			    border-bottom:1px solid #aaa;
 			}
 
+
+			.section.disabled .sheet {
+				background:black;
+				opacity:0.5;
+				pointer-events: none
+			}
+
+			.section.disabled .header span {
+				display:none;
+			}
+
+			#regulations.disabled .header:after {
+				content:'Select a span or template above to edit its regulations';
+			}
+
+			#timespans.disabled .header:after {
+				content:'Select a regulation or template above to edit its timespans';
+			}
+			
 			.currentTarget:after {
 				font-weight:bold;
 			}
@@ -227,22 +247,22 @@
 				<div id='featuresList' class='sheet'>
 				</div>
 			</div>
-			<div class='section' id='regulations'>
+			<div class='section disabled' id='regulations'>
 				<div class='header p10'>
 					<span class='prompt'>☝ Regulations of</span>
 					<span class='currentTarget'></span> 
 					<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
 					<div class='fr'>
-						<span id='regulationPrompt' class='small quiet'>Make this a template</span>
+						<span id='regulationPrompt' class='small'>Make this a template</span>
 						<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
 					</div>	
 				</div>
 				<div id='regulationsList' class='sheet'>
 				</div>
 			</div>
-			<div class='section' id='timespans'>
+			<div class='section disabled' id='timespans'>
 				<div class='header p10' >
-						☝ Timespans of
+						<span class='prompt'>☝ Timespans of</span>
 						<span class='currentTarget'></span> 
 
 <!-- 					<span id='regulationIndex' class='strong' style='color:maroon'></span>

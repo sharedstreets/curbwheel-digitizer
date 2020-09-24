@@ -16,6 +16,16 @@ var app = {
 
 	io: {
 
+		cullEmptyRows: data => {
+
+			var output = data.filter(row => {
+				const entries = Object.entries(row).map(keyValuePair=>keyValuePair[1]);
+				return entries.filter(item => item!== null && item !== undefined).length>0
+			})
+
+			return output
+		},
+
 		resolveTemplateReference: (templateType, obj, indices)=>{
 
 			const paramName = `${templateType}Template`;
@@ -23,6 +33,7 @@ var app = {
 			const inlineValue = typeof value === 'string';
 
 			var output;
+
 			if (inlineValue) output = app.state.templates[templateType+'s'][value]
 
 			else {
@@ -37,21 +48,41 @@ var app = {
 
 		export: () => {
 
-			const featuresData = app.ui.featuresList.getSourceData();
+			const cull = app.io.cullEmptyRows;
+			const featuresData = cull(app.ui.featuresList.getSourceData());
 
 			var exportedData = app.utils.clone(app.state.data).features.map((ft,i) => {
 
-				var regs = app.io.resolveTemplateReference('regulation', featuresData[i], [i]);
+				var regs = cull(app.io.resolveTemplateReference('regulation', featuresData[i], [i]));
 				
 				regs.forEach((regulation, rIndex)=>{
 					regulation.timeSpans = app.io.resolveTemplateReference('timeSpan', regulation, [i, rIndex])
 				})
 
 				ft.properties.output = {
+
 					location: app.utils.combineObjects(ft.output.location, featuresData[i]),
 					regulations: regs.map((reg, rIndex) => {
 
 						var output = {
+
+							rule: {
+								activity: reg.activity,
+								maxStay: reg.maxStay,
+								userClasses: reg.userClasses,
+								userSubClasses: reg.userSubClasses,
+								priorityCategory: reg.priorityCategory,
+								payment: reg.payment
+							},
+
+							payment: !reg.payment ? 'foo' : {
+								rates: reg.rates,
+								durations: reg.durations,
+								methods: reg.methods,
+								forms: reg.forms,
+								phone: reg.phone,
+								operator: reg.operator
+							},
 
 							timeSpans: reg.timeSpans.map(span => {
 
@@ -76,25 +107,7 @@ var app = {
 								}
 
 								return output
-							}),
-
-							payment: !reg.payment ? undefined : {
-								rates: reg.rates,
-								durations: reg.durations,
-								methods: reg.methods,
-								forms: reg.forms,
-								phone: reg.phone,
-								operator: reg.operator
-							},
-
-							rule: {
-								activity: reg.activity,
-								maxStay: reg.maxStay,
-								userClasses: reg.userClasses,
-								userSubClasses: reg.userSubClasses,
-								priorityCategory: reg.priorityCategory,
-								payment: reg.payment
-							}
+							})
 						}
 
 						return output
@@ -102,6 +115,7 @@ var app = {
 				}
 
 				ft.properties = ft.properties.output
+
 				delete ft.output;
 				return ft
 			})
@@ -305,10 +319,10 @@ var app = {
 					},
 
 					//limit selections to feature entries (no blank rows)
-					afterSelection: (row, column, row2, column2, preventScrolling, selectionLayerLevel)=>app.ui.capFeatureSelection(row, column, row2, column2, preventScrolling, selectionLayerLevel),
+					afterSelection: (row, column, row2, column2, preventScrolling)=>app.ui.capFeatureSelection(row, column, row2, column2, preventScrolling),
 
 					//after selecting features
-					afterSelectionEnd: (row, column, row2, column2, preventScrolling, selectionLayerLevel)=>app.ui.renderFeatureRegulations(row, column, row2, column2, preventScrolling, selectionLayerLevel),
+					afterSelectionEnd: (row, column, row2, column2, preventScrolling)=>app.ui.onSelectingFeature(row, column, row2, column2, preventScrolling),
 
 					stretchH:'all',
 					licenseKey: 'non-commercial-and-evaluation'
@@ -344,7 +358,6 @@ var app = {
 
 						if (changes) {
 
-							console.log('ac')
 							var paymentWasChanged = changes
 								.map(change => change[1])
 								.some(col => col === 'payment')
@@ -464,14 +477,10 @@ var app = {
 			app.ui.regulationsList = regulationsList;
 			app.ui.timeSpansList = timeSpansList;
 
-			app.constants.timeSpansCollapsingScheme
-				// .forEach(item => timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
-			
-			app.ui.map.on('load', ()=>{
-				featuresList.selectCell(0,0,0,0)
-				regulationsList.selectCell(0,0,0,0)
-			})
-
+			app.ui.collapseTables();
+			//prevent inadvertent browser-back behavior from overscrolling
+			d3.selectAll('.section')
+				.on('wheel', ()=>event.preventDefault())
 		}
 	},
 
@@ -481,114 +490,136 @@ var app = {
 
 		if (key === 'currentRegulationTarget') {
 
-			const singleRowSelected = value.inlineFeature>=0;
+			d3.select('#regulations')
+				.classed('disabled', typeof value !== 'object')
 
-			// UPDATE REGULATIONS SHEET
-			var regulationToRender;
-			const existingTemplate = app.state.templates.regulations[value.template];
+			if (value) {
 
-			if (value.template) regulationToRender = existingTemplate || [];
-			else if (singleRowSelected) regulationToRender = app.state.raw.regulations[value.inlineFeature] || []
-			else if (value.inlineFeatures) regulationToRender = [];
+				const singleRowSelected = value.inlineFeature>=0;
 
-			app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
+				// UPDATE REGULATIONS SHEET
+				var regulationToRender;
+				const existingTemplate = app.state.templates.regulations[value.template];
+
+				if (value.template) regulationToRender = existingTemplate || [];
+				else if (singleRowSelected) regulationToRender = app.state.raw.regulations[value.inlineFeature] || []
+				else if (value.inlineFeatures) regulationToRender = [];
+
+				app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
 
 
-			// update regulations sheet heading
-			const vIndex = value.visualRange;
+				// update regulations sheet heading
+				const vIndex = value.visualRange;
 
-			d3.select('#regulations .currentTarget')
-				.attr('type', value.template)
-				.attr('inline', value.template ? undefined : `span${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
+				d3.select('#regulations .currentTarget')
+					.attr('type', value.template)
+					.attr('inline', value.template ? undefined : `span${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
 
-			//update regulations input call to action: rename template if currently one, create template if currently isn't
-			d3.select('#regulationPrompt')
-				.text(existingTemplate ? 'Rename' : 'Make this a template')
+				//update regulations input call to action: rename template if currently one, create template if currently isn't
+				d3.select('#regulationPrompt')
+					.text(existingTemplate ? 'Rename' : 'Make this a template')
 
-			d3.select('#regulationInput')
-				.property('value', value.template || '')
-			
-			//update map
-			app.ui.map
-				.setPaintProperty('spans', 'line-color',
-					[
-						'match',
-						['get', 'id'],
-						value.rawRange, 
-						'steelblue',
-						'#ccc'
-					]
-				);
+				d3.select('#regulationInput')
+					.property('value', value.template || '')
+				
+				//update map
+				app.ui.map
+					.setPaintProperty('spans', 'line-color',
+						[
+							'match',
+							['get', 'id'],
+							value.rawRange, 
+							'steelblue',
+							'#ccc'
+						]
+					);
 
-			//if selecting single row, update images
-			if (value.inlineFeature) {			
+				//if selecting single row, update images
+				if (value.inlineFeature) {			
 
-				var images = d3.selectAll('#images')
-					.selectAll('img')
-					.data(
-						app.state.data.features[value.inlineFeature]
-							.properties.images.map(img=>img.url)
-					)
+					var images = d3.selectAll('#images')
+						.selectAll('img')
+						.data(
+							app.state.data.features[value.inlineFeature]
+								.properties.images.map(img=>img.url)
+						)
 
-				images
-					.enter()
-					.append('img')
-					.attr('src', d=>d)
-					.attr('class','inlineBlock mr10 image');
+					images
+						.enter()
+						.append('img')
+						.attr('src', d=>d)
+						.attr('class','inlineBlock mr10 image');
 
-				images
-					.exit()
-					.remove()
+					images
+						.exit()
+						.remove()
+				}
 			}
+
+			// if empty value, clear regulations sheet
+			else app.ui.regulationsList.loadData([])	
+
+			app.ui.collapseTables();
+
 		}
 
 		else if (key === 'currentTimeSpanTarget') {
 
-			const singleRowSelected = value.inlineRegulation>=0;
+			d3.select('#timespans')
+				.classed('disabled', typeof value !== 'object')
 
-			// UPDATE REGULATIONS SHEET
-			var timeSpanToRender;
-			const existingTemplate = app.state.templates.timeSpans[value.template];
+			if (value) {
+				const singleRowSelected = value.inlineRegulation>=0;
 
-			if (value.template) timeSpanToRender = existingTemplate || [];
-			
-			else if (singleRowSelected) {
+				// UPDATE REGULATIONS SHEET
+				var timeSpanToRender;
+				const existingTemplate = app.state.templates.timeSpans[value.template];
 
-				const singleIF = app.state.currentRegulationTarget.inlineFeature;
+				if (value.template) timeSpanToRender = existingTemplate || [];
+				
+				else if (singleRowSelected) {
 
-				if (singleIF>=0) {
-					if (!app.state.raw.timeSpans[singleIF]) app.state.raw.timeSpans[singleIF] = []
-					timeSpanToRender = app.state.raw.timeSpans[singleIF][value.inlineRegulation] || []
+					const singleIF = app.state.currentRegulationTarget.inlineFeature;
+
+					if (singleIF>=0) {
+						if (!app.state.raw.timeSpans[singleIF]) app.state.raw.timeSpans[singleIF] = []
+						timeSpanToRender = app.state.raw.timeSpans[singleIF][value.inlineRegulation] || []
+					}
+
+					else timeSpanToRender = []
 				}
+				
+				else if (value.inlineRegulations) timeSpanToRender = [];
 
-				else timeSpanToRender = []
+				// update regulations sheet heading
+				const vIndex = value.visualRange;
+
+				d3.select('#timespans .currentTarget')
+					.attr('type', value.template)
+					.attr('inline', value.template ? undefined : `regulation${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
+
+				//update regulations input call to action: rename template if currently one, create template if currently isn't
+				d3.select('#timeSpanPrompt')
+					.text(existingTemplate ? 'Rename' : 'Make this a template')
+
+				d3.select('#timeSpanInput')
+					.property('value', value.template || '')
+
+
+				// render new timespans data and collapse table
+				app.ui.timeSpansList.loadData(app.utils.clone(timeSpanToRender))
+
+			}
+
+
+			// if empty value, clear timespans sheet
+			else {
+
+				app.ui.timeSpansList.loadData([])	
+				app.ui.regulationsList.deselectCell()
 			}
 			
-			else if (value.inlineRegulations) timeSpanToRender = [];
-
-			// update regulations sheet heading
-			const vIndex = value.visualRange;
-
-			d3.select('#timespans .currentTarget')
-				.attr('type', value.template)
-				.attr('inline', value.template ? undefined : `regulation${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
-
-			//update regulations input call to action: rename template if currently one, create template if currently isn't
-			d3.select('#timeSpanPrompt')
-				.text(existingTemplate ? 'Rename' : 'Make this a template')
-
-			d3.select('#timeSpanInput')
-				.property('value', value.template || '')
-
-
-			// render new timespans data and collapse table
-			app.ui.timeSpansList.loadData(app.utils.clone(timeSpanToRender))
-
-			app.constants.timeSpansCollapsingScheme
-				.forEach(item => app.ui.timeSpansList.getPlugin('collapsibleColumns').collapseSection(item))
-
-			app.constants.regulationsCollapsingScheme
-				.forEach(item => app.ui.regulationsList.getPlugin('collapsibleColumns').collapseSection(item))
+			app.ui.collapseTables();
 
 		}
 
@@ -598,32 +629,11 @@ var app = {
 
 	ui:{
 
-		formatTime: (input) => {
-			console.log('ft')
-			const split = input.split(':');
-			const fail = ()=>{alert('Time must be in 24-hour, HH:MM format'); return}
-
-			if (split.length === 2){
-				
-				//convert to numbers		
-				const numbers = split.map(n=>parseFloat(n));
-
-				//cap and add leading zeroes
-
-				const capped = numbers.map((d,i)=>{
-
-					if (!d>=0) fail()
-					else if (i===0 && d>23) fail()
-					else if (i===1 && d>59) fail()
-
-					else if (d<10) d='0'+d;	
-
-					return d
-				})
-
-				return capped.join(':')
-			}
-
+		collapseTables: () => {
+			['timeSpans', 'regulations'].forEach(type=>{
+				app.constants[type+'CollapsingScheme']
+					.forEach(item => app.ui[type+'List'].getPlugin('collapsibleColumns').collapseSection(item))
+			})
 		},
 
 		// when timespanslist changes, update inline or template
@@ -633,24 +643,36 @@ var app = {
 
 				var data = app.ui.timeSpansList.getSourceData();
 				var templateName = app.ui.regulationsList.getSourceDataAtCell(app.state.activeRegulationIndex, 12);
+				const cRT = app.state.currentRegulationTarget;				
 				const cTT = app.state.currentTimeSpanTarget;
-				const singleRowSelected = !cTT.inlineRegulations;
+				const targetFeatures = [cRT.inlineFeature] || cRT.inlineFeatures;
+				const targetRegulations = [cTT.inlineRegulation] || cTT.inlineRegulations
+				const singleRegulationSelected = !cTT.inlineRegulations;
 
-				// if one row selected, apply to template or inline as appropriate
-				if (singleRowSelected) {
-					if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
+				const targetRegulationTemplate = cRT.template
+
+				console.log('timespandata', data)
+				if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
+				else targetFeatures.forEach(fIndex=>{
+					app.state.raw[fIndex] = app.state.raw[fIndex] || {}
+					targetRegulations.forEach(rIndex=>{app.state.raw[fIndex][rIndex] = data})
+				})
+
+				// // if one regulation selected, apply to template or inline as appropriate
+				// if (singleRowSelected) {
+				// 	if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
 					
-					else app.state.raw.timeSpans[cTT.inlineRegulation] = data;
-				}
+				// 	else app.state.raw.timeSpans[cTT.inlineRegulation] = data;
+				// }
 
-				// if multiple regulations selected, apply the timespans inline-ly
-				else {
-					const range = cTT.inlineRegulations;
-					for (var f = range[0]; f<=range[1]; f++) {
-						app.state.raw.timeSpans[f] = data
-						app.ui.regulationsList.setSourceDataAtCell(f, 12, undefined)
-					}
-				}
+				// // if multiple regulations selected, apply the timespans inline-ly
+				// else {
+				// 	const range = cTT.inlineRegulations;
+				// 	for (var f = range[0]; f<=range[1]; f++) {
+				// 		app.state.raw.timeSpans[f] = data
+				// 		app.ui.regulationsList.setSourceDataAtCell(f, 12, undefined)
+				// 	}
+				// }
 
 			}, 1)
 			
@@ -664,7 +686,7 @@ var app = {
 
 			var cTT = {rawRange:range, visualRange:range}
 
-			const newRowsSelected = JSON.stringify(app.state.currentTimeSpanTarget.rawRange) !== JSON.stringify(cTT.rawRange)
+			const newRowsSelected = !app.state.currentTimeSpanTarget || JSON.stringify(app.state.currentTimeSpanTarget.rawRange) !== JSON.stringify(cTT.rawRange)
 			if (newRowsSelected) {
 				// if selected a single regulation
 				if (row === row2) {
@@ -838,7 +860,7 @@ var app = {
 			}
 		},
 
-		capFeatureSelection: (row, column, row2, column2, preventScrolling, selectionLayerLevel) => {
+		capFeatureSelection: (row, column, row2, column2, preventScrolling) => {
 			app.state.cappingSelection = row < 0 || row2>=app.state.data.features.length;
 			const fL = app.ui.featuresList;
 
@@ -855,7 +877,8 @@ var app = {
 		},
 
 		// show the proper regulations scheme (either inline or templated)
-		renderFeatureRegulations: (row, column, row2, column2, preventScrolling, selectionLayerLevel) => {
+		onSelectingFeature: (row, column, row2, column2, preventScrolling) => {
+			
 			if (app.state.cappingSelection) return
 
 			const fL = app.ui.featuresList;
@@ -880,11 +903,13 @@ var app = {
 				for (var f=row; f<=row2; f++) cRT.rawRange.push(f)
 			}
 
-			
 			app.setState('currentRegulationTarget', cRT)
-			app.ui.updateRegulationsListSettings()
+			app.setState('currentTimeSpanTarget', undefined)
+			app.ui.updateRegulationsListSettings()			
+
 		},
 
+		// enable/disable payment cells depending on payment status
 		updateRegulationsListSettings: (changes) => {
 
 			var data = app.ui.regulationsList.getSourceData();
@@ -911,7 +936,9 @@ var app = {
 			})
 
 			app.ui.regulationsList.loadData(data)
+			app.ui.collapseTables()
 		},
+
 		updateTemplateTypeahead: (templateType)=>{
 
 			// TODO: make this work for timespan templates		
