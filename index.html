@@ -28,24 +28,29 @@
 			}
 
 
-			.section.disabled .sheet {
+			.section[disabled] .sheet {
 				background:black;
 				opacity:0.5;
 				pointer-events: none
 			}
 
-			.section.disabled .header span {
+			.section[disabled] .header span {
 				display:none;
 			}
 
-			#regulations.disabled .header:after {
-				content:'Select a span or template above to edit its regulations';
+			#regulations[disabled='notSelected'] .header:after {
+				content:'Select a span or regulationTemplate to edit its regulations';
 			}
 
-			#timespans.disabled .header:after {
-				content:'Select a regulation or template above to edit its timespans';
+			#timespans[disabled='notSelected'] .header:after {
+				content:'Select a regulation or timeSpanTemplate to edit its timespans';
 			}
-			
+			#regulations[disabled='containsTemplate'] .header:after,
+			#timespans[disabled='containsTemplate'] .header:after {
+				content:'Templates cannot be part of a batch selection';
+			}
+
+
 			.currentTarget:after {
 				font-weight:bold;
 			}
@@ -247,7 +252,7 @@
 				<div id='featuresList' class='sheet'>
 				</div>
 			</div>
-			<div class='section disabled' id='regulations'>
+			<div class='section' disabled='notSelected' id='regulations'>
 				<div class='header p10'>
 					<span class='prompt'>☝ Regulations of</span>
 					<span class='currentTarget'></span> 
@@ -260,7 +265,7 @@
 				<div id='regulationsList' class='sheet'>
 				</div>
 			</div>
-			<div class='section disabled' id='timespans'>
+			<div class='section' disabled='notSelected' id='timespans'>
 				<div class='header p10' >
 						<span class='prompt'>☝ Timespans of</span>
 						<span class='currentTarget'></span> 

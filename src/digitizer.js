@@ -38,7 +38,10 @@ var app = {
 
 			else {
 				if (indices.length===1) output = app.state.raw[templateType+'s'][indices[0]]
-				else output = app.state.raw[templateType+'s'][indices[0]][indices[1]]
+				else {
+					const timeSpansOfRegulation = app.state.raw[templateType+'s'][indices[0]];
+					output = timeSpansOfRegulation ? timeSpansOfRegulation[indices[1]] : []
+				}
 			}
 
 			output = output || []
@@ -486,27 +489,17 @@ var app = {
 
 
 
-	setState: (key, value) => {
+	setState: (key, value, cb) => {
 
 		if (key === 'currentRegulationTarget') {
 
 			d3.select('#regulations')
-				.classed('disabled', typeof value !== 'object')
+				.attr('disabled', value.disabledMessage || undefined)
 
-			if (value) {
+			if (!value.disabledMessage) {
 
 				const singleRowSelected = value.inlineFeature>=0;
-
-				// UPDATE REGULATIONS SHEET
-				var regulationToRender;
 				const existingTemplate = app.state.templates.regulations[value.template];
-
-				if (value.template) regulationToRender = existingTemplate || [];
-				else if (singleRowSelected) regulationToRender = app.state.raw.regulations[value.inlineFeature] || []
-				else if (value.inlineFeatures) regulationToRender = [];
-
-				app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
-
 
 				// update regulations sheet heading
 				const vIndex = value.visualRange;
@@ -515,12 +508,24 @@ var app = {
 					.attr('type', value.template)
 					.attr('inline', value.template ? undefined : `span${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
 
-				//update regulations input call to action: rename template if currently one, create template if currently isn't
+				// update regulations input call to action: rename template if currently one, create template if currently isn't
 				d3.select('#regulationPrompt')
 					.text(existingTemplate ? 'Rename' : 'Make this a template')
 
 				d3.select('#regulationInput')
 					.property('value', value.template || '')
+
+
+				// UPDATE REGULATIONS SHEET
+				var regulationToRender;
+
+				if (value.template) regulationToRender = existingTemplate || [];
+				else if (singleRowSelected) regulationToRender = app.state.raw.regulations[value.inlineFeature] || []
+				else if (value.inlineFeatures) regulationToRender = [];
+
+				app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
+
+
 				
 				//update map
 				app.ui.map
@@ -566,9 +571,9 @@ var app = {
 		else if (key === 'currentTimeSpanTarget') {
 
 			d3.select('#timespans')
-				.classed('disabled', typeof value !== 'object')
+				.attr('disabled', value.disabledMessage || undefined)
 
-			if (value) {
+			if (!value.disabledMessage) {
 				const singleRowSelected = value.inlineRegulation>=0;
 
 				// UPDATE REGULATIONS SHEET
@@ -612,7 +617,7 @@ var app = {
 			}
 
 
-			// if empty value, clear timespans sheet
+			// if disabled value, clear timespans sheet
 			else {
 
 				app.ui.timeSpansList.loadData([])	
@@ -625,6 +630,7 @@ var app = {
 
 
 		app.state[key] = value;
+		if (cb) cb()
 	},
 
 	ui:{
@@ -651,29 +657,15 @@ var app = {
 
 				const targetRegulationTemplate = cRT.template
 
-				console.log('timespandata', data)
 				if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
 				else targetFeatures.forEach(fIndex=>{
 					app.state.raw[fIndex] = app.state.raw[fIndex] || {}
-					targetRegulations.forEach(rIndex=>{app.state.raw[fIndex][rIndex] = data})
+					targetRegulations.forEach(rIndex=>{
+						app.state.raw[fIndex][rIndex] = data
+					})
 				})
 
-				// // if one regulation selected, apply to template or inline as appropriate
-				// if (singleRowSelected) {
-				// 	if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
-					
-				// 	else app.state.raw.timeSpans[cTT.inlineRegulation] = data;
-				// }
-
-				// // if multiple regulations selected, apply the timespans inline-ly
-				// else {
-				// 	const range = cTT.inlineRegulations;
-				// 	for (var f = range[0]; f<=range[1]; f++) {
-				// 		app.state.raw.timeSpans[f] = data
-				// 		app.ui.regulationsList.setSourceDataAtCell(f, 12, undefined)
-				// 	}
-				// }
-
+				console.log(app.state.raw[fIndex])
 			}, 1)
 			
 		},
@@ -687,18 +679,38 @@ var app = {
 			var cTT = {rawRange:range, visualRange:range}
 
 			const newRowsSelected = !app.state.currentTimeSpanTarget || JSON.stringify(app.state.currentTimeSpanTarget.rawRange) !== JSON.stringify(cTT.rawRange)
+			const rlData = app.ui.regulationsList.getSourceData();
 			if (newRowsSelected) {
+				const singleRegulationSelected = row === row2;
+
 				// if selected a single regulation
-				if (row === row2) {
-					const templateName = app.ui.regulationsList.getSourceDataAtCell(row, 12)
+				if (singleRegulationSelected) {
+					const templateName = rlData[row].timeSpanTemplate
 					if (templateName) cTT.template = templateName;
 					else cTT.inlineRegulation = row
 				}
 
 				// if selecting multiple regs
-				else cTT.inlineRegulations = range
-				app.setState('currentTimeSpanTarget', cTT)
-				
+
+				else {
+					cTT.inlineRegulations = range
+					cTT.rawRange = [];
+					var allInline = true
+
+					for (var f=range[0]; f<=range[1]; f++) {
+						if (rlData[f].timeSpanTemplate) allInline = false;
+						else cTT.rawRange.push(f)
+					}
+		
+					if (!allInline) cRT = {disabledMessage: 'containsTemplate'};
+					
+
+				}
+				const multipleFeaturesSelected = app.state.currentRegulationTarget.inlineFeatures;
+				console.log(cTT)
+				// if editing
+				if (!false) app.setState('currentTimeSpanTarget', cTT)
+				else alert('mfs')
 			}
 
 		},
@@ -793,7 +805,6 @@ var app = {
 					else app.state.raw.regulations[cRT.inlineFeature] = oldData
 				}
 				app.ui.regulationsList.loadData(oldData);
-				// app.ui.regulationsList.render();
 
 				const newCTT = {template:text, rawRange:cTT.rawRange}
 				app.setState('currentTimeSpanTarget', newCTT)
@@ -850,10 +861,9 @@ var app = {
 
 				}
 
-				console.log(oldData)
 				app.ui.featuresList.loadData(oldData);
-				// app.ui.featuresList.render();
 				const newCRT = {template:text, rawRange:cRT.rawRange}
+
 				app.setState('currentRegulationTarget', newCRT)
 				app.ui.updateTemplateTypeahead('regulations')
 
@@ -882,29 +892,43 @@ var app = {
 			if (app.state.cappingSelection) return
 
 			const fL = app.ui.featuresList;
+			const flData = fL.getSourceData();
 			var range = row === row2 ? row : [row, row2]
 			if (range[1]<range[0]) range.reverse()
 
 			var cRT = {visualRange:range};
-			const singleRowSelected = row === row2;
+			const singleFeatureSelected = row === row2;
 
-			if (singleRowSelected) {
+			if (singleFeatureSelected) {
 				const physicalRow = fL.toPhysicalRow(row);
-				const templateName = fL.getSourceDataAtCell(physicalRow, 4);
+				const templateName = flData[physicalRow].regulationTemplate;
+
 				cRT.rawRange = physicalRow
 
 				if (templateName) cRT.template = templateName
 				else cRT.inlineFeature = physicalRow
 			}
 
+			// if multiple features selected, make sure none are templates before applying currentRegulationTarget
 			else {
-				cRT.inlineFeatures = [row, row2].map(row=>fL.toPhysicalRow(row))
+				cRT.inlineFeatures = range.map(row=>fL.toPhysicalRow(row))
 				cRT.rawRange = [];
-				for (var f=row; f<=row2; f++) cRT.rawRange.push(f)
+				var allInline = true
+
+				for (var f=range[0]; f<=range[1]; f++) {
+					if (flData[f].regulationTemplate) allInline = false;
+					else cRT.rawRange.push(f)
+				}
+	
+				if (!allInline) cRT = {disabledMessage: 'containsTemplate'};
+				
+
 			}
 
-			app.setState('currentRegulationTarget', cRT)
-			app.setState('currentTimeSpanTarget', undefined)
+
+			app.setState('currentRegulationTarget', cRT, ()=>{
+				app.setState('currentTimeSpanTarget', {disabledMessage:'notSelected'})
+			})
 			app.ui.updateRegulationsListSettings()			
 
 		},
