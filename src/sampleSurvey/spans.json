@@ -1,0 +1,516 @@
+{
+	"type": "FeatureCollection",
+	"features": [{
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64510390000001, 35.778471800000005],
+				[-78.6451074, 35.778408400000004],
+				[-78.64511470000001, 35.7782746],
+				[-78.6451284, 35.7780225],
+				[-78.64514360000001, 35.777740800000004],
+				[-78.6451668440011, 35.777311901011885]
+			]
+		},
+		"properties": {
+			"created_at": 1601930364089,
+			"cwheelid": "",
+			"shst_ref_id": "80d1739b623dde33f91eaafcc11e2def",
+			"ref_side": "left",
+			"ref_len": 151.28252484202758,
+			"srv_dist": 137.89999999999998,
+			"label": "No Parking",
+			"dst_st": 0,
+			"dst_end": 129.09999999999997,
+			"images": ["src/sampleSurvey/images/fcc040ed-80a3-46de-b874-2ba3a3549460.jpg", "src/sampleSurvey/images/ce2f7ca0-82bb-43b8-9681-0eb8793b6ec8.jpg", "src/sampleSurvey/images/a21772d9-9190-480b-a795-c5061a52e6e1.jpg", "src/sampleSurvey/images/9cb915eb-4f4d-4e83-81a7-675c67732d65.jpg", "src/sampleSurvey/images/89d099ac-8ed5-4ffd-836d-66814f49d7d8.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.64513814005834, 35.777841988754076]
+		},
+		"properties": {
+			"created_at": 1601930364089,
+			"cwheelid": "",
+			"shst_ref_id": "80d1739b623dde33f91eaafcc11e2def",
+			"ref_side": "left",
+			"ref_len": 151.28252484202758,
+			"srv_dist": 137.89999999999998,
+			"label": "Fire hydrant",
+			"dst_st": 70.09999999999997,
+			"dst_end": 70.09999999999997,
+			"images": ["src/sampleSurvey/images/b9034462-e684-4de9-9d6c-e1dd1f2c2830.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64451853363038, 35.77845096493391],
+				[-78.64456720000001, 35.7784527],
+				[-78.6447843217531, 35.778460422616014]
+			]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "Loading",
+			"dst_st": 94.5,
+			"dst_end": 118.5,
+			"images": ["src/sampleSurvey/images/f96f5ee4-07d9-4e49-9956-7c1679ed2f96.jpg", "src/sampleSurvey/images/6f8c8a5d-b68d-4e40-b609-b02879432518.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64409216687723, 35.77843576315382],
+				[-78.64451853363038, 35.77845096493391]
+			]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "Parking",
+			"dst_st": 56,
+			"dst_end": 94.5,
+			"images": ["src/sampleSurvey/images/b817b001-509e-4caa-82a4-12f6860ca140.jpg", "src/sampleSurvey/images/7861af4c-fc3a-46fc-bbeb-b0e8b8fbaf3a.jpg", "src/sampleSurvey/images/b051e515-be2e-473a-b8a8-59d6785de865.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.64448863258004, 35.77844989888411]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "Payment device",
+			"dst_st": 91.80000000000007,
+			"dst_end": 91.80000000000007,
+			"images": ["src/sampleSurvey/images/547d895e-2eab-4ac2-b881-d5e4c8432316.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.6438274876139, 35.7784263203653],
+				[-78.64403150000001, 35.7784336],
+				[-78.64409216687723, 35.77843576315382]
+			]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "No Parking",
+			"dst_st": 32.10000000000002,
+			"dst_end": 56,
+			"images": ["src/sampleSurvey/images/dd5785b6-8a0d-42cb-b694-bd0a277e1cd4.jpg", "src/sampleSurvey/images/0402f1f3-7b9e-4d52-b407-9be1618d15df.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.6436071062514, 35.778418456258954],
+				[-78.6438274876139, 35.7784263203653]
+			]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "Parking",
+			"dst_st": 12.200000000000045,
+			"dst_end": 32.10000000000002,
+			"images": ["src/sampleSurvey/images/fa447e2c-20b7-45ea-8781-b079fe24719e.jpg", "src/sampleSurvey/images/31b871c4-8256-472e-8fc5-1038bb8bceb1.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.64368905710472, 35.77842138064697]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "Payment device",
+			"dst_st": 19.600000000000023,
+			"dst_end": 19.600000000000023,
+			"images": ["src/sampleSurvey/images/52a4028d-24c5-46a8-a897-771b54c478dd.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.643472, 35.7784136],
+				[-78.64356910000001, 35.778417100000006],
+				[-78.6436071062514, 35.778418456258954]
+			]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "No Parking",
+			"dst_st": 0,
+			"dst_end": 12.200000000000045,
+			"images": ["src/sampleSurvey/images/33e3cf06-1167-4c1c-bade-2928e787ca93.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.6435738829342, 35.77841727068041]
+		},
+		"properties": {
+			"created_at": 1601930658069,
+			"cwheelid": "",
+			"shst_ref_id": "6a733834a1f6a7a88d4643d03cecfb22",
+			"ref_side": "left",
+			"ref_len": 147.35713700029717,
+			"srv_dist": 134.80000000000007,
+			"label": "Fire hydrant",
+			"dst_st": 9.200000000000045,
+			"dst_end": 9.200000000000045,
+			"images": ["src/sampleSurvey/images/e470f544-b97e-463d-aa5d-5927c5409269.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.643472, 35.7784136],
+				[-78.64347690000001, 35.778324500000004],
+				[-78.64347859555917, 35.778293209930496]
+			]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "No Parking",
+			"dst_st": 0,
+			"dst_end": 13.399999999999977,
+			"images": ["src/sampleSurvey/images/d8d5f17e-88f8-4749-abe4-58014b663c3e.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64347859555917, 35.778293209930496],
+				[-78.643498313177, 35.777929336637044]
+			]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "Parking",
+			"dst_st": 13.399999999999977,
+			"dst_end": 53.89999999999998,
+			"images": ["src/sampleSurvey/images/5094076c-6804-47a0-bb34-7cc16b13de7f.jpg", "src/sampleSurvey/images/8911e4ef-ad46-4b96-bfa2-4c0fec491c73.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.64348857610433, 35.77810902715272]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "Payment device",
+			"dst_st": 33.89999999999998,
+			"dst_end": 33.89999999999998,
+			"images": ["src/sampleSurvey/images/d98f9cc2-e5e3-432d-90fb-fdd5c2db2b9e.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.643498313177, 35.777929336637044],
+				[-78.6435086, 35.7777395],
+				[-78.6435215660319, 35.777499875639506]
+			]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "No Parking",
+			"dst_st": 53.89999999999998,
+			"dst_end": 101.69999999999993,
+			"images": ["src/sampleSurvey/images/ff3a909b-586a-40af-9731-7e4611c769be.jpg", "src/sampleSurvey/images/fb70b934-dc1e-4a7f-9c58-e59cf6bd0b7c.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64350118560503, 35.777876327934756],
+				[-78.6435086, 35.7777395],
+				[-78.64351699620775, 35.777584330416126]
+			]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "Curb cut",
+			"dst_st": 59.799999999999955,
+			"dst_end": 92.29999999999995,
+			"images": ["src/sampleSurvey/images/6c6845c1-9996-4acc-aa8b-352d69902baa.jpg", "src/sampleSurvey/images/d6388235-bccb-402e-ba99-06a1d9ad626d.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.6435215660319, 35.777499875639506],
+				[-78.64352890689928, 35.777364208923494]
+			]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "Misc. Span",
+			"dst_st": 101.69999999999993,
+			"dst_end": 116.79999999999995,
+			"images": ["src/sampleSurvey/images/f91feb32-f6ee-48a1-b474-241009e761f7.jpg", "src/sampleSurvey/images/e6f89b37-ed29-4c94-b9d8-96b82c9732ec.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64352890689928, 35.777364208923494],
+				[-78.64353877570801, 35.77718182254301]
+			]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "No Parking",
+			"dst_st": 116.79999999999995,
+			"dst_end": 137.0999999999999,
+			"images": ["src/sampleSurvey/images/1587ea85-b3f7-4a6c-8203-36ae0bea6cc1.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.6435350323721, 35.77725100358398]
+		},
+		"properties": {
+			"created_at": 1601930966638,
+			"cwheelid": "",
+			"shst_ref_id": "dfa4879d554850a32e65428ee173ddc4",
+			"ref_side": "right",
+			"ref_len": 149.40117871555685,
+			"srv_dist": 137.0999999999999,
+			"label": "Fire hydrant",
+			"dst_st": 129.39999999999998,
+			"dst_end": 129.39999999999998,
+			"images": ["src/sampleSurvey/images/b88d3e52-f89b-48e9-900d-73196d13fd34.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.6435447, 35.7770713],
+				[-78.6436414, 35.7770706],
+				[-78.64364667478795, 35.77707074407868]
+			]
+		},
+		"properties": {
+			"created_at": 1601931196823,
+			"cwheelid": "",
+			"shst_ref_id": "a1eafa00da022cf6e770b3472d992c75",
+			"ref_side": "right",
+			"ref_len": 83.41685802257375,
+			"srv_dist": 67.60000000000002,
+			"label": "No Parking",
+			"dst_st": 0,
+			"dst_end": 9.200000000000045,
+			"images": ["src/sampleSurvey/images/395719cc-cdd5-48f4-8ee8-7957eccc3575.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64364667478795, 35.77707074407868],
+				[-78.64416183359886, 35.77708481431775]
+			]
+		},
+		"properties": {
+			"created_at": 1601931196823,
+			"cwheelid": "",
+			"shst_ref_id": "a1eafa00da022cf6e770b3472d992c75",
+			"ref_side": "right",
+			"ref_len": 83.41685802257375,
+			"srv_dist": 67.60000000000002,
+			"label": "Parking",
+			"dst_st": 9.200000000000045,
+			"dst_end": 55.700000000000045,
+			"images": ["src/sampleSurvey/images/1686cad5-9186-4f69-8d4f-9a36fee91b82.jpg", "src/sampleSurvey/images/3c86975b-d86b-4847-991c-6dd124d05b9d.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64416183359886, 35.77708481431775],
+				[-78.6442903463629, 35.77708832397049]
+			]
+		},
+		"properties": {
+			"created_at": 1601931196823,
+			"cwheelid": "",
+			"shst_ref_id": "a1eafa00da022cf6e770b3472d992c75",
+			"ref_side": "right",
+			"ref_len": 83.41685802257375,
+			"srv_dist": 67.60000000000002,
+			"label": "Loading",
+			"dst_st": 55.700000000000045,
+			"dst_end": 67.30000000000007,
+			"images": ["src/sampleSurvey/images/eca78242-d140-4fe7-92cd-fbc40ec215f6.jpg", "src/sampleSurvey/images/dd9d7cbe-09ab-4919-a6d8-6d64c04ce00a.jpg", "src/sampleSurvey/images/42fe2c1b-dbba-4510-a9c0-bb497332dd6b.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.6444689, 35.7770932],
+				[-78.64507268011795, 35.77710989084979]
+			]
+		},
+		"properties": {
+			"created_at": 1601931364691,
+			"cwheelid": "",
+			"shst_ref_id": "ba50efeeaf5c21e53e46851b697e4494",
+			"ref_side": "right",
+			"ref_len": 63.96985983270507,
+			"srv_dist": 63.799999999999955,
+			"label": "Parking",
+			"dst_st": 0,
+			"dst_end": 54.5,
+			"images": ["src/sampleSurvey/images/d03d79cb-3789-4445-bcaf-3cfaf2a1fdce.jpg", "src/sampleSurvey/images/c1a894b8-931e-4ea6-9795-744ce22517ff.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.64472259840399, 35.777100213587076]
+		},
+		"properties": {
+			"created_at": 1601931364691,
+			"cwheelid": "",
+			"shst_ref_id": "ba50efeeaf5c21e53e46851b697e4494",
+			"ref_side": "right",
+			"ref_len": 63.96985983270507,
+			"srv_dist": 63.799999999999955,
+			"label": "Payment device",
+			"dst_st": 22.899999999999977,
+			"dst_end": 22.899999999999977,
+			"images": ["src/sampleSurvey/images/f3dec5a5-b1af-4c9d-9e99-eedcb4523969.jpg", "src/sampleSurvey/images/d1142d24-f0ac-470d-adc2-4a51a73f5b0a.jpg", "src/sampleSurvey/images/dda03766-7b5f-4430-b659-ae8d5aceda7c.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "LineString",
+			"coordinates": [
+				[-78.64529725083057, 35.77711584397877],
+				[-78.64587444710645, 35.77713169281707]
+			]
+		},
+		"properties": {
+			"created_at": 1601931486282,
+			"cwheelid": "",
+			"shst_ref_id": "3640672a8ae1aa1035be3dd00b1c0bde",
+			"ref_side": "right",
+			"ref_len": 83.63838909319324,
+			"srv_dist": 71.40000000000009,
+			"label": "Parking",
+			"dst_st": 10.800000000000068,
+			"dst_end": 62.90000000000009,
+			"images": ["src/sampleSurvey/images/b70ae68a-b579-439f-993b-79323656f638.jpg", "src/sampleSurvey/images/b44f1f8f-56eb-4f61-b224-02a2b78eec61.jpg"]
+		}
+	}, {
+		"type": "Feature",
+		"geometry": {
+			"type": "Point",
+			"coordinates": [-78.64559415790727, 35.77712399689264]
+		},
+		"properties": {
+			"created_at": 1601931486282,
+			"cwheelid": "",
+			"shst_ref_id": "3640672a8ae1aa1035be3dd00b1c0bde",
+			"ref_side": "right",
+			"ref_len": 83.63838909319324,
+			"srv_dist": 71.40000000000009,
+			"label": "Payment device",
+			"dst_st": 37.600000000000136,
+			"dst_end": 37.600000000000136,
+			"images": ["src/sampleSurvey/images/070283b4-255e-4eff-b104-4cdd3a2fe31e.jpg", "src/sampleSurvey/images/341929e5-6afe-40ae-86af-971e09396863.jpg"]
+		}
+	}]
+}
