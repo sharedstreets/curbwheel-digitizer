@@ -296,7 +296,7 @@
 
 	<script>
 
-		var surveyUrl = location.search.replace('?survey=', '') || 'src/sampleOutput.geojson';
+		var surveyUrl = location.search.replace('?survey=', '') || 'src/sampleSurvey/spans.json';
 
 		d3.json(surveyUrl, (e,r)=>{
 			if (e) alert('Error importing the survey. Ensure the url is valid, preceded by "?survey=" in the url of this page.')
@@ -305,6 +305,9 @@
 			app.init.ui();
 		})	
 
+		d3.json(surveyUrl.replace('spans.json', 'points.json'), (e,r)=>{
+			app.state.assetExport = r;
+		})
 
 	</script>
 	<script src='src/turf.min.js'></script>

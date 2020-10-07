@@ -123,26 +123,44 @@ var app = {
 				return ft
 			})
 
+
 			exportedData = {
 				"type": "FeatureCollection",
 				"features": exportedData
 			}
 
-			var element = document.createElement('a');
 
-			const blob = new Blob([JSON.stringify(exportedData)], {type: "application/json"});
+			// prepare asset export
+			console.log(exportedData)
+
+			for (asset of app.state.assetExport.features) {
+				console.log(asset)
+				const relevantFeatureProperties = exportedData.features
+					.filter(ft=>ft.properties.location.shstRefId === asset.properties['shst_ref_id'])[0].properties.location;
+				asset.properties.assetType = relevantFeatureProperties.assetType;
+				asset.properties.assetSubtype = relevantFeatureProperties.assetSubtype
+			}
+
+			app.io.downloadItem(exportedData, 'curblr_'+Date.now()+'.json');
+			app.io.downloadItem(app.state.assetExport, 'assets_'+Date.now()+'.json');
+
+		},
+
+		downloadItem: (payload, fileName) =>{
+			var element = document.createElement('a');
+			element.style.display = 'none';
+
+			const blob = new Blob([JSON.stringify(payload)], {type: "application/json"});
 			var url = window.URL.createObjectURL(blob);
 			
 			element.setAttribute('href', url);
-			element.setAttribute('download', 'curblr_'+Date.now()+'.json');
+			element.setAttribute('download', fileName);
 
-			element.style.display = 'none';
 			document.body.appendChild(element);
 
 			element.click();
 		    document.body.removeChild(element);
 		}
-
 	},
 
 
@@ -214,7 +232,7 @@ var app = {
 			app.state.data.features.forEach((d,i)=>{
 
 				d.properties.id = i;
-				d.properties.images = JSON.parse(d.properties.images);
+				// d.properties.images = JSON.parse(d.properties.images);
 				
 				//create separate object for curblr properties
 				d.output = {
@@ -543,21 +561,21 @@ var app = {
 				if (value.inlineFeature) {			
 
 					var images = d3.selectAll('#images')
+
+					images.selectAll('img').remove()
+
+					images
 						.selectAll('img')
 						.data(
 							app.state.data.features[value.inlineFeature]
-								.properties.images.map(img=>img.url)
+								.properties.images
 						)
 
-					images
 						.enter()
 						.append('img')
 						.attr('src', d=>d)
 						.attr('class','inlineBlock mr10 image');
 
-					images
-						.exit()
-						.remove()
 				}
 			}
 
