@@ -131,10 +131,8 @@ var app = {
 
 
 			// prepare asset export
-			console.log(exportedData)
 
 			for (asset of app.state.assetExport.features) {
-				console.log(asset)
 				const relevantFeatureProperties = exportedData.features
 					.filter(ft=>ft.properties.location.shstRefId === asset.properties['shst_ref_id'])[0].properties.location;
 				asset.properties.assetType = relevantFeatureProperties.assetType;
@@ -232,7 +230,6 @@ var app = {
 			app.state.data.features.forEach((d,i)=>{
 
 				d.properties.id = i;
-				// d.properties.images = JSON.parse(d.properties.images);
 				
 				//create separate object for curblr properties
 				d.output = {
@@ -309,7 +306,6 @@ var app = {
 				
 					data: data,
 					width:'100%',
-					minRows:30,
 					rowHeaders: true,
 					colHeaders: app.constants.ui.tableColumns.featuresList.map(c=>c.data),
 					filters: true,
@@ -339,11 +335,11 @@ var app = {
 
 					},
 
-					//limit selections to feature entries (no blank rows)
-					afterSelection: (row, column, row2, column2, preventScrolling)=>app.ui.capFeatureSelection(row, column, row2, column2, preventScrolling),
+					afterSelection: ()=> d3.select('#regulations .currentTarget').attr('inline', ''),
 
-					//after selecting features
-					afterSelectionEnd: (row, column, row2, column2, preventScrolling)=>app.ui.onSelectingFeature(row, column, row2, column2, preventScrolling),
+					afterSelectionEnd: (row, column, row2, column2, preventScrolling)=>{
+						app.ui.onSelectingFeature(row, column, row2, column2, preventScrolling);
+					},
 
 					stretchH:'all',
 					licenseKey: 'non-commercial-and-evaluation'
@@ -511,6 +507,29 @@ var app = {
 
 		if (key === 'currentRegulationTarget') {
 
+			// update images
+
+			var images = d3.selectAll('#images')
+			images.selectAll('img').remove()
+
+			//if selecting single row, update images
+			if (value.inlineFeature) {			
+
+				images
+					.selectAll('img')
+					.data(
+						app.state.data.features[value.inlineFeature]
+							.properties.images
+					)
+
+					.enter()
+					.append('img')
+					.attr('src', d=>app.state.rootPath+d)
+					.attr('class','inlineBlock mr10 image');
+
+			}
+
+
 			d3.select('#regulations')
 				.attr('disabled', value.disabledMessage || undefined)
 
@@ -557,26 +576,6 @@ var app = {
 						]
 					);
 
-				//if selecting single row, update images
-				if (value.inlineFeature) {			
-
-					var images = d3.selectAll('#images')
-
-					images.selectAll('img').remove()
-
-					images
-						.selectAll('img')
-						.data(
-							app.state.data.features[value.inlineFeature]
-								.properties.images
-						)
-
-						.enter()
-						.append('img')
-						.attr('src', d=>d)
-						.attr('class','inlineBlock mr10 image');
-
-				}
 			}
 
 			// if empty value, clear regulations sheet
@@ -683,7 +682,6 @@ var app = {
 					})
 				})
 
-				console.log(app.state.raw[fIndex])
 			}, 1)
 			
 		},
@@ -725,7 +723,7 @@ var app = {
 
 				}
 				const multipleFeaturesSelected = app.state.currentRegulationTarget.inlineFeatures;
-				console.log(cTT)
+
 				// if editing
 				if (!false) app.setState('currentTimeSpanTarget', cTT)
 				else alert('mfs')
@@ -793,7 +791,6 @@ var app = {
 
 					//change all references of old template, to new
 					oldData.forEach(row=>{
-						console.log(row[12], oldTemplateName)
 						if (row.timeSpanTemplate===oldTemplateName) {console.log('oldnamefound, changing', row);row.timeSpanTemplate = text}
 					})
 
@@ -809,7 +806,6 @@ var app = {
 					const iRs = cTT.inlineRegulations;
 					if (iRs) for (var f=iRs[0]; f<=iRs[1]; f++) oldData[f].timeSpanTemplate = text;
 					else oldData[cTT.inlineRegulation].timeSpanTemplate = text;
-					console.log(oldData)
 
 				}
 
@@ -888,26 +884,9 @@ var app = {
 			}
 		},
 
-		capFeatureSelection: (row, column, row2, column2, preventScrolling) => {
-			app.state.cappingSelection = row < 0 || row2>=app.state.data.features.length;
-			const fL = app.ui.featuresList;
-
-			if (app.state.cappingSelection){
-				console.log('busting cap')
-				!app.state.cappingSelection;
-				fL.selectCells(
-					Math.max(row, 0),
-					column,
-					Math.min(row2, app.state.data.features.length-1),
-					column2
-				)
-			}
-		},
 
 		// show the proper regulations scheme (either inline or templated)
 		onSelectingFeature: (row, column, row2, column2, preventScrolling) => {
-			
-			if (app.state.cappingSelection) return
 
 			const fL = app.ui.featuresList;
 			const flData = fL.getSourceData();
@@ -1000,7 +979,7 @@ var app = {
 				className:' steelblue',
 				placeholder: 'Unique values'
 			}
-			console.log(defaultColumns)
+
 			app.ui[parentList[templateType]].updateSettings({
 				columns: defaultColumns
 			})
@@ -1092,7 +1071,12 @@ var app = {
 			Object.keys(b).forEach(key=>a[key]=b[key]);
 			return a
 		},
-		arrayToNullObj: (array) =>Object.fromEntries(array.map(p=>[p, null])),
+		arrayToNullObj: (array) =>{
+			var output = {};
+			array.forEach(key=>output[key]=null)
+			return output
+		},
+
 		clone: (input) => JSON.parse(JSON.stringify(input)),
 		makeTimes: ()=>{
 

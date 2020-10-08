@@ -19,6 +19,7 @@
 
 			#dataPanel {
 				border-right:1px solid #ccc;
+				overflow:hidden;
 			}
 
 			.section {
@@ -296,18 +297,30 @@
 
 	<script>
 
-		var surveyUrl = location.search.replace('?survey=', '') || 'src/sampleSurvey/spans.json';
+		// retrieve survey root path, with trailing slash ensured
+		app.state.rootPath = location.search.replace('?survey=', '') || 'src/sampleSurvey/';
+		if (app.state.rootPath[app.state.rootPath.length-1] !== '/') app.state.rootPath.push('/')
 
-		d3.json(surveyUrl, (e,r)=>{
-			if (e) alert('Error importing the survey. Ensure the url is valid, preceded by "?survey=" in the url of this page.')
-			app.state.data = r;
-			app.init.map();
-			app.init.ui();
+		// download spans
+		d3.json(app.state.rootPath+'spans.json', (e,r)=>{
+
+			if (e) alert('No survey found. Ensure the survey path is valid, preceded by "?survey=" in the url of this page.')
+
+			// initiate UI, and fetch points json for eventual asset export
+			else {
+
+				app.state.data = r;
+				app.init.map();
+				app.init.ui();
+
+				d3.json(app.state.rootPath+'points.json', (pointsError,r)=>{
+
+					if (pointsError) alert('No asset metadata found at the provided path. Ensure there is a "points.json" file in this directory.')
+					app.state.assetExport = r;
+				})
+			}
+		
 		})	
-
-		d3.json(surveyUrl.replace('spans.json', 'points.json'), (e,r)=>{
-			app.state.assetExport = r;
-		})
 
 	</script>
 	<script src='src/turf.min.js'></script>
