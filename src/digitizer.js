@@ -126,7 +126,34 @@ var app = {
 
 			exportedData = {
 				"type": "FeatureCollection",
-				"features": exportedData
+				"features": exportedData,
+				"manifest": {
+					"createdDate": new Date().toISOString(),
+					"lastUpdatedDate": "2020-10-10T17:40:45Z",
+					"priorityHierarchy": [
+						"no standing",
+						"construction",
+						"temporary restriction",
+						"restricted standing",
+						"standing",
+						"restricted loading",
+						"loading",
+						"no parking",
+						"restricted parking",
+						"paid parking",
+						"free parking"
+					],
+					"curblrVersion": "1.1.0",
+					"timeZone": "America/Los_Angeles",
+					"currency": "USD",
+					"unitHeightLength": "feet",
+					"unitWeight": "tons",
+					"authority": {
+						"name": "Your Transportation Agency Name",
+						"url": "https://www.youragencyurl.gov",
+						"phone": "+15551231234"
+					}
+				}
 			}
 
 
