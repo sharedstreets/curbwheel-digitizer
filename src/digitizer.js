@@ -348,12 +348,12 @@ var app = {
 
 						if (changes) {
 
-							var assetSubtypeWasChanged = changes
+							var assetTypeWasChanged = changes
 								.map(change => change[1])
-								.some(col => col === 2)
+								.some(col => col === 'assetType')
 
 							//propagate assetType to assetSubType
-							if (assetSubtypeWasChanged) updateFeaturesListSettings()
+							if (assetTypeWasChanged) updateFeaturesListSettings()
 
 							const templateChanges = changes.filter(change=>change[1] === 4);
 							if (templateChanges.length>0) app.ui.resolveTemplates(templateChanges, 'regulation')
@@ -480,14 +480,15 @@ var app = {
 
 						var cellProperties = {}
 					    
-						// if currently at assetSubType column
+						// if currently at assetSubtype column
 					    if (col === 3) {
 
-							var parentValue = data[row][col-1];
+							var parentValue = data[row].assetType;
 							var propagatingRule = app.constants.ui.entryPropagations.assetType.propagatingValues[parentValue]
-					    	
+
 					    	// if assetType is a value that allows subtype (indicated by presence of propagating rule)
 					    	if (propagatingRule){
+
 								cellProperties = {
 									readOnly:false, 
 									type: propagatingRule.values ? 'autocomplete' : 'text', 
