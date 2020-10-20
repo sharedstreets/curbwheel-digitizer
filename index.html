@@ -25,7 +25,6 @@
 			.section {
 				height:33.33333%;
 			    position: relative;
-			    border-bottom:1px solid #aaa;
 			}
 
 
@@ -35,7 +34,8 @@
 				pointer-events: none
 			}
 
-			.section[disabled] .header span {
+			.section[disabled] .header span,
+			.section[disabled] .templateInput {
 				display:none;
 			}
 
@@ -78,6 +78,7 @@
 			#timespans .currentTarget[type]:after{
 				background:maroon;
 			}
+
 			.image {
 				max-height:500px;
 			}
@@ -102,7 +103,9 @@
 			input {
 				border-radius: 2px;
 				border: none;
+				background:#f3f3f3;
 			}
+
 			/*custom style overrides*/
 			table {
 				font-size:12;
@@ -154,9 +157,8 @@
 				color:white;
 			}
 			.handsontable .htAutocompleteArrow {
-				color:steelblue;
-				opacity:0.5;
-				transform:scale(1.2);
+				transform:scaleX(1.2);
+				color:#aaa;
 			}
 
 			.htDimmed .htAutocompleteArrow {
@@ -197,27 +199,8 @@
 			.header {
 				height:50px;
 			    line-height: 30px;
-			    background: #fafafa;
-			}
-/*			#regulations:after {
-				content: 'Select a regulation template above to edit ↗';
-				display: block;
-    			text-align: center;
-    			color:white;
-    			font-size:2em;
-       			margin: 10% auto;
-    			width:50%;
 			}
 
-			#timespans:after {
-				content: 'Select a timespan template above to edit ↗';
-				display: block;
-    			color:white;
-    			text-align: center;
-    			font-size:2em;
-    			margin: 10% auto;
-    			width:50%;
-			}*/
 
 			.templateText {
 				padding: 2px 6px;
@@ -246,19 +229,19 @@
 	<body>
 
 		<div class='col6 fullHeight scroll' id='dataPanel'>
-			<div class='section'>
+			<div class='section' style='border-bottom:3px solid steelblue'>
 				<div class='header p10'>
 					Spans <div class='fr' id='featureFilter'></div>
 				</div>
 				<div id='featuresList' class='sheet'>
 				</div>
 			</div>
-			<div class='section' disabled='notSelected' id='regulations'>
+			<div class='section' style='border-bottom: 3px solid maroon' disabled='notSelected' id='regulations'>
 				<div class='header p10'>
 					<span class='prompt'>☝ Regulations of</span>
 					<span class='currentTarget'></span> 
 					<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
-					<div class='fr'>
+					<div class='fr templateInput'>
 						<span id='regulationPrompt' class='small'>Make this a template</span>
 						<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
 					</div>	
@@ -272,7 +255,7 @@
 						<span class='currentTarget'></span> 
 
 <!-- 					<span id='regulationIndex' class='strong' style='color:maroon'></span>
- -->					<div class='fr'>
+ -->					<div class='fr templateInput'>
 						<span id='timeSpanPrompt' class='small quiet'>Make this a template</span>
 						<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
 					</div>					
