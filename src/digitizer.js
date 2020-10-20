@@ -252,9 +252,11 @@ var app = {
 		},
 
 		ui: () =>{
-
+			console.log(app.state.data.features)
 			// prep data
-			app.state.data.features.forEach((d,i)=>{
+			app.state.data.features
+			.sort((a,b)=>a.properties.label>b.properties.label ? 1 : -1)
+			.forEach((d,i)=>{
 
 				d.properties.id = i;
 				
@@ -724,6 +726,7 @@ var app = {
 
 			const newRowsSelected = !app.state.currentTimeSpanTarget || JSON.stringify(app.state.currentTimeSpanTarget.rawRange) !== JSON.stringify(cTT.rawRange)
 			const rlData = app.ui.regulationsList.getSourceData();
+
 			if (newRowsSelected) {
 				const singleRegulationSelected = row === row2;
 
@@ -753,8 +756,7 @@ var app = {
 				const multipleFeaturesSelected = app.state.currentRegulationTarget.inlineFeatures;
 
 				// if editing
-				if (!false) app.setState('currentTimeSpanTarget', cTT)
-				else alert('mfs')
+				app.setState('currentTimeSpanTarget', cTT)
 			}
 
 		},
@@ -762,7 +764,7 @@ var app = {
 		// whenever regulationsList changes, apply change to the right place
 		onChangedRegulations: () =>{
 
-			setTimeout(()=>{
+			setTimeout(() => {
 
 				var data = app.ui.regulationsList.getSourceData();
 				const cRT = app.state.currentRegulationTarget;
@@ -785,7 +787,7 @@ var app = {
 					}
 				}
 													
-			},1)
+			}, 1)
 			
 		},
 
