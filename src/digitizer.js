@@ -252,8 +252,8 @@ var app = {
 		},
 
 		ui: () =>{
-			console.log(app.state.data.features)
-			// prep data
+
+			// prep data, sorted by label
 			app.state.data.features
 			.sort((a,b)=>a.properties.label>b.properties.label ? 1 : -1)
 			.forEach((d,i)=>{
@@ -316,7 +316,7 @@ var app = {
 			app.utils.makeTimes();
 
 			// form features data for table
-			var data = app.state.data.features
+			app.state.raw.features = app.state.data.features
 				.map((f,i)=>{
 
 					const p = f.properties;
@@ -333,38 +333,30 @@ var app = {
 
 				{
 				
-					data: data,
+					data: app.state.raw.features,
+					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.featuresList.map(r=>r.data)),
 					width:'100%',
 					rowHeaders: true,
 					colHeaders: app.constants.ui.tableColumns.featuresList.map(c=>c.data),
 					filters: true,
 					outsideClickDeselects: false,
 					autoWrapRow: false,
-					cells: (row, col, prop) => {
-						if (row >= app.state.data.features.length) return {readOnly:true, placeholder: undefined, type:null, source:undefined}
-					},
 
 					columns:app.constants.ui.tableColumns.featuresList,
 
 					afterChange: (changes) => {
-
 						if (changes) {
 
-							var assetTypeWasChanged = changes
-								.map(change => change[1])
-								.some(col => col === 'assetType')
+							app.ui.updateFeaturesListSettings(changes)
 
-							//propagate assetType to assetSubType
-							if (assetTypeWasChanged) updateFeaturesListSettings()
-
-							const templateChanges = changes.filter(change=>change[1] === 4);
+							const templateChanges = changes.filter(change=>change[1] === 'regulationTemplate');
 							if (templateChanges.length>0) app.ui.resolveTemplates(templateChanges, 'regulation')
 	
 						}
 
 					},
 
-					afterSelection: ()=> d3.select('#regulations .currentTarget').attr('inline', ''),
+					afterSelection: () => d3.select('#regulations .currentTarget').attr('inline', ''),
 
 					afterSelectionEnd: (row, column, row2, column2, preventScrolling)=>{
 						app.ui.onSelectingFeature(row, column, row2, column2, preventScrolling);
@@ -470,55 +462,6 @@ var app = {
 			d3.select('#timeSpanInput')
 				.on('keyup', e=>app.ui.updateTimeSpanInput(event))
 
-
-			const updateFeaturesListSettings = (changes) =>{
-
-				var data = featuresList.getSourceData();
-				var cellsToClear = []
-
-				featuresList.updateSettings({
-
-					cells: (row, col, prop) => {
-
-						var cellProperties = {}
-					    
-						// if currently at assetSubtype column
-					    if (col === 3) {
-
-							var parentValue = data[row].assetType;
-							var propagatingRule = app.constants.ui.entryPropagations.assetType.propagatingValues[parentValue]
-
-					    	// if assetType is a value that allows subtype (indicated by presence of propagating rule)
-					    	if (propagatingRule){
-
-								cellProperties = {
-									readOnly:false, 
-									type: propagatingRule.values ? 'autocomplete' : 'text', 
-									source: propagatingRule.values,
-									placeholder: propagatingRule.placeholder
-								}
-					    	}
-							
-							// if subtype not allowed, clear value
-							else cellsToClear.push([row, col])		
-					    }
-						
-						if (row>=app.state.data.features.length) {
-							cellProperties.readOnly =true; 
-							cellProperties.type = null;
-							cellProperties.placeholder = undefined
-						}
-
-
-					    return cellProperties;
-					}
-				})
-
-				cellsToClear
-					.forEach(
-						array=>featuresList.setDataAtCell(array[0], array[1], undefined)
-					)
-			}
 
 			app.ui.featuresList = featuresList;
 			app.ui.regulationsList = regulationsList;
@@ -821,7 +764,7 @@ var app = {
 
 					//change all references of old template, to new
 					oldData.forEach(row=>{
-						if (row.timeSpanTemplate===oldTemplateName) {console.log('oldnamefound, changing', row);row.timeSpanTemplate = text}
+						if (row.timeSpanTemplate===oldTemplateName) {row.timeSpanTemplate = text}
 					})
 
 				}
@@ -874,6 +817,8 @@ var app = {
 
 				e.target.blur();
 
+				oldData = app.ui.featuresList.getSourceData();
+
 				// if editing a template
 				if (cRT.template){
 
@@ -883,11 +828,10 @@ var app = {
 					app.state.templates.regulations[text] = app.state.templates.regulations[oldTemplateName] || [];
 					delete app.state.templates.regulations[oldTemplateName];
 
-					//change all references to old template, to new
-					var oldData = app.ui.featuresList.getSourceData();
+					//change all references of old template, to new
 
 					oldData.forEach(row=>{
-						if (row[4]===oldTemplateName) row[4] = text
+						if (row.regulationTemplate===oldTemplateName) row.regulationTemplate = text
 					})
 
 				}
@@ -897,19 +841,22 @@ var app = {
 
 					//create new template with whatever's currently in the regulationslist
 					app.state.templates.regulations[text] = app.ui.regulationsList.getSourceData()
-					var oldData = app.ui.featuresList.getSourceData();
 
+					// apply template to active feature(s)
 					const iFs = cRT.inlineFeatures
-					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) oldData[f][4] = text;
-					else oldData[cRT.inlineFeature][4] = text;
+					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) oldData[f].regulationTemplate = text;
+					else oldData[cRT.inlineFeature].regulationTemplate = text;
 
 				}
 
-				app.ui.featuresList.loadData(oldData);
-				const newCRT = {template:text, rawRange:cRT.rawRange}
+				const newCRT = {
+					template:text, 
+					rawRange:cRT.rawRange
+				}
 
 				app.setState('currentRegulationTarget', newCRT)
 				app.ui.updateTemplateTypeahead('regulations')
+				app.ui.featuresList.loadData(oldData);
 
 			}
 		},
@@ -942,7 +889,7 @@ var app = {
 				cRT.rawRange = [];
 				var allInline = true
 
-				for (var f=range[0]; f<=range[1]; f++) {
+				for (var f = range[0]; f<=range[1]; f++) {
 					if (flData[f].regulationTemplate) allInline = false;
 					else cRT.rawRange.push(f)
 				}
@@ -957,6 +904,63 @@ var app = {
 				app.setState('currentTimeSpanTarget', {disabledMessage:'notSelected'})
 			})
 			app.ui.updateRegulationsListSettings()			
+
+		},
+
+		updateFeaturesListSettings: (changes) =>{
+
+			const featuresList = app.ui.featuresList;
+			var data = featuresList.getSourceData();
+			var cellsToClear = []
+
+			var assetTypeWasChanged = changes
+				.some(change => change[1] === 'assetType')
+
+			const templateWasChanged = changes
+				.some(change => change[1] === 'regulationTemplate')
+
+			if (templateWasChanged) app.ui.updateTemplateTypeahead('regulations')
+
+			if (assetTypeWasChanged) {
+				featuresList.updateSettings({
+
+					cells: (row, col, prop) => {
+
+						var cellProperties = {}
+					    
+						// if currently at assetSubtype column
+					    if (assetTypeWasChanged && col === 3) {
+
+							var parentValue = data[row].assetType;
+							var propagatingRule = app.constants.ui.entryPropagations.assetType.propagatingValues[parentValue]
+
+					    	// if assetType is a value that allows subtype (indicated by presence of propagating rule)
+					    	if (propagatingRule){
+
+								cellProperties = {
+									readOnly:false, 
+									type: propagatingRule.values ? 'autocomplete' : 'text', 
+									source: propagatingRule.values,
+									placeholder: propagatingRule.placeholder
+								}
+					    	}
+							
+							// if subtype not allowed, clear value
+							else cellsToClear.push([row, col])		
+					    }
+						
+						// else if (col === 4) app.ui.updateTemplateTypeahead('regulations')
+
+
+					    return cellProperties;
+					}
+				})
+
+				cellsToClear
+					.forEach(
+						array=>featuresList.setDataAtCell(array[0], array[1], undefined)
+					)
+			}
 
 		},
 
@@ -991,9 +995,8 @@ var app = {
 		},
 
 		updateTemplateTypeahead: (templateType)=>{
-
 			// TODO: make this work for timespan templates		
-			if (templateType ==='timeSpans') return
+			// if (templateType ==='timeSpans') return
 			const extantTemplates = Object.keys(app.state.templates[templateType]);
 
 			const parentList = {
@@ -1002,13 +1005,15 @@ var app = {
 			}
 
 			var defaultColumns = app.utils.clone(app.constants.ui.tableColumns[parentList[templateType]]);
-
-			defaultColumns[defaultColumns.length-1] = {
-				type: 'autocomplete',
-				source: extantTemplates,
-				className:' steelblue',
-				placeholder: 'Unique values'
-			}
+			defaultColumns[defaultColumns.length-1].type = 'autocomplete';
+			defaultColumns[defaultColumns.length-1].source = extantTemplates;
+			// defaultColumns[defaultColumns.length-1] = {
+			// 	data: (templateType+'Template').replace('sTemplate', 'Template'),
+			// 	type: 'autocomplete',
+			// 	source: extantTemplates,
+			// 	className:' steelblue',
+			// 	placeholder: 'Unique values'
+			// }
 
 			app.ui[parentList[templateType]].updateSettings({
 				columns: defaultColumns
