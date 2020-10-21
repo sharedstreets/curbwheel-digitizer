@@ -232,7 +232,7 @@ var app = {
 							'line-color': 'steelblue',
 							'line-width':{
 								base:1.5,
-								stops: [[6, 1], [22, 30]]
+								stops: [[6, 1], [22, 20]]
 							},
 							'line-offset': {
 								property:'ref_side',
@@ -259,7 +259,7 @@ var app = {
 							'line-color': 'steelblue',
 							'line-width':{
 								base:1.5,
-								stops: [[6, 1], [22, 100]]
+								stops: [[6, 1], [22, 60]]
 							},
 							'line-offset': {
 								property:'ref_side',
@@ -286,7 +286,7 @@ var app = {
 							'line-color': 'white',
 							'line-width':{
 								base:1.5,
-								stops: [[6, 1], [22, 30]]
+								stops: [[6, 1], [22, 20]]
 							},
 							'line-offset': {
 								property:'ref_side',
@@ -301,49 +301,6 @@ var app = {
 							}
 						}
 					}, 'waterway-label')
-					// .addLayer({
-					// 	id: 'span-active-arrows', 
-					// 	type:'symbol',
-					// 	source: 'spans',
-					// 	minzoom:14,
-					// 	filter:['==', 'id', 'null'],
-					// 	layout: {
-					// 		'symbol-placement': 'line',
-					// 		'symbol-spacing':1,
-					// 		'text-ignore-placement': true,
-					// 		'text-allow-overlap': true,
-					// 		'text-field':{
-					// 			property:'ref_side',
-					// 			type:'categorical',
-					// 			stops:[
-					// 				['left', '↑'], 
-					// 				['right', '↓']
-					// 			]
-					// 		},
-					// 		'text-keep-upright':false,
-					// 		'text-size':{
-					// 			base:1.5,
-					// 			stops: [[12, 20], [22, 90]]
-					// 		},
-					// 		'text-offset':{
-					// 			property:'ref_side',
-					// 			type:'categorical',
-					// 			stops:[
-					// 				['left', [0,-0.5]], 
-					// 				['right', [0,0.5]]
-					// 			]
-					// 		}
-					// 	},
-					// 	paint: {
-					// 		'text-color': 'white',
-					// 		// 'text-halo-color':'steelblue', 
-					// 		// 'text-halo-width':{
-					// 		// 	base:1.5,
-					// 		// 	stops: [[12, 5], [22, 12]]
-					// 		// }
-					// 		// 'text-translate-anchor':'viewport'
-					// 	}
-					// }, 'waterway-label')
 			})
 
 			app.ui.map = map;
@@ -639,7 +596,6 @@ var app = {
 				app.ui.map
 					.setFilter('span-active', filter)
 					.setFilter('span-active-core', filter)
-					.setFilter('span-active-arrows', filter)
 
 				if (value.rawRange>-999) {
 					const bbox = turf.bbox(app.state.data.features[value.rawRange])

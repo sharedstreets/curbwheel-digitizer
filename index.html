@@ -229,15 +229,16 @@
 		</style>
 	</head>
 	<body>
-		<div class='headerBar p10'>
+<!-- 		<div class='headerBar p10'>
 			<span class='strong'>CurbLR Digitizer</span>
 			<span class='button z100 fr' onclick='app.io.export()'>Export</span>
-		</div>
-		<div style='position:absolute; bottom:0px; width:100%; top:46px'>
+		</div> -->
 			<div class='col6 fullHeight scroll' id='dataPanel'>
 				<div class='section' style='border-bottom:3px solid steelblue'>
 					<div class='header p10'>
-						Spans <div class='fr' id='featureFilter'></div>
+						Spans 
+						<div class='fr hidden' id='featureFilter'></div>
+			<span class='button z100 fr' onclick='app.io.export()' style='padding:0px 10px'>Export</span>
 					</div>
 					<div id='featuresList' class='sheet'>
 					</div>
@@ -276,7 +277,6 @@
 					<h3>Images</h3>
 				</div>		
 			</div>
-		</div>
 	</body>
 	<script src="https://cdn.jsdelivr.net/npm/handsontable@8.0.0/dist/handsontable.full.min.js"></script>
 	<script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
