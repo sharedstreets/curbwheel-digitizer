@@ -229,31 +229,24 @@ var app = {
 							'line-cap':'round',
 						},
 						paint: {
-							'line-color': 'black',
+							'line-color': 'steelblue',
 							'line-width':{
 								base:1.5,
-								stops: [[6, 1], [22, 50]]
+								stops: [[6, 1], [22, 30]]
+							},
+							'line-offset': {
+								property:'ref_side',
+								type:'categorical',
+								base:2,
+								stops:[
+									[{zoom: 12, value: 'left'}, -5],
+									[{zoom: 12, value: 'right'}, 5],
+									[{zoom: 22, value: 'left'}, -300],
+									[{zoom: 22, value: 'right'}, 300]
+								]
 							}
 						}
-					})
-					.addLayer({
-						id: 'spans-core', 
-						type: 'line', 
-						source: {
-							type:'geojson',
-							data: app.state.data
-						},
-						layout: {
-							'line-cap':'round',
-						},
-						paint: {
-							'line-color': 'white',
-							'line-width':{
-								base:1.5,
-								stops: [[6, 1], [22, 10]]
-							}
-						}
-					})
+					}, 'waterway-label')
 					.addLayer({
 						id: 'span-active', 
 						type: 'line', 
@@ -267,9 +260,20 @@ var app = {
 							'line-width':{
 								base:1.5,
 								stops: [[6, 1], [22, 100]]
+							},
+							'line-offset': {
+								property:'ref_side',
+								type:'categorical',
+								base:2,
+								stops:[
+									[{zoom: 12, value: 'left'}, -5],
+									[{zoom: 12, value: 'right'}, 5],
+									[{zoom: 22, value: 'left'}, -300],
+									[{zoom: 22, value: 'right'}, 300]
+								]
 							}
 						}
-					})
+					}, 'waterway-label')
 					.addLayer({
 						id: 'span-active-core', 
 						type:'line',
@@ -283,51 +287,63 @@ var app = {
 							'line-width':{
 								base:1.5,
 								stops: [[6, 1], [22, 30]]
-							}
-						}
-					})
-					.addLayer({
-						id: 'span-active-arrows', 
-						type:'symbol',
-						source: 'spans',
-						minzoom:14,
-						filter:['==', 'id', 'null'],
-						layout: {
-							'symbol-placement': 'line',
-							'symbol-spacing':1,
-							'text-ignore-placement': true,
-							'text-field':{
+							},
+							'line-offset': {
 								property:'ref_side',
 								type:'categorical',
+								base:2,
 								stops:[
-									['left', '↑'], 
-									['right', '↓']
-								]
-							},
-							'text-keep-upright':false,
-							'text-size':{
-								base:1.5,
-								stops: [[12, 30], [22, 60]]
-							},
-							'text-offset':{
-								property:'ref_side',
-								type:'categorical',
-								stops:[
-									['left', [0,-0.5]], 
-									['right', [0,0.5]]
+									[{zoom: 12, value: 'left'}, -5],
+									[{zoom: 12, value: 'right'}, 5],
+									[{zoom: 22, value: 'left'}, -300],
+									[{zoom: 22, value: 'right'}, 300]
 								]
 							}
-						},
-						paint: {
-							'text-color': 'white',
-							// 'text-halo-color':'steelblue', 
-							// 'text-halo-width':{
-							// 	base:1.5,
-							// 	stops: [[12, 5], [22, 12]]
-							// }
-							// 'text-translate-anchor':'viewport'
 						}
-					})
+					}, 'waterway-label')
+					// .addLayer({
+					// 	id: 'span-active-arrows', 
+					// 	type:'symbol',
+					// 	source: 'spans',
+					// 	minzoom:14,
+					// 	filter:['==', 'id', 'null'],
+					// 	layout: {
+					// 		'symbol-placement': 'line',
+					// 		'symbol-spacing':1,
+					// 		'text-ignore-placement': true,
+					// 		'text-allow-overlap': true,
+					// 		'text-field':{
+					// 			property:'ref_side',
+					// 			type:'categorical',
+					// 			stops:[
+					// 				['left', '↑'], 
+					// 				['right', '↓']
+					// 			]
+					// 		},
+					// 		'text-keep-upright':false,
+					// 		'text-size':{
+					// 			base:1.5,
+					// 			stops: [[12, 20], [22, 90]]
+					// 		},
+					// 		'text-offset':{
+					// 			property:'ref_side',
+					// 			type:'categorical',
+					// 			stops:[
+					// 				['left', [0,-0.5]], 
+					// 				['right', [0,0.5]]
+					// 			]
+					// 		}
+					// 	},
+					// 	paint: {
+					// 		'text-color': 'white',
+					// 		// 'text-halo-color':'steelblue', 
+					// 		// 'text-halo-width':{
+					// 		// 	base:1.5,
+					// 		// 	stops: [[12, 5], [22, 12]]
+					// 		// }
+					// 		// 'text-translate-anchor':'viewport'
+					// 	}
+					// }, 'waterway-label')
 			})
 
 			app.ui.map = map;

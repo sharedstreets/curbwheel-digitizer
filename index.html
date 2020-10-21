@@ -16,7 +16,9 @@
 				font-family: Verdana, Helvetica, Arial, sans-serif;
 				font-weight: 400
 			}
-
+			.headerBar {
+				border-bottom:2px solid #aaa;
+			}
 			#dataPanel {
 				border-right:1px solid #ccc;
 				overflow:hidden;
@@ -227,50 +229,53 @@
 		</style>
 	</head>
 	<body>
-
-		<div class='col6 fullHeight scroll' id='dataPanel'>
-			<div class='section' style='border-bottom:3px solid steelblue'>
-				<div class='header p10'>
-					Spans <div class='fr' id='featureFilter'></div>
-				</div>
-				<div id='featuresList' class='sheet'>
-				</div>
-			</div>
-			<div class='section' style='border-bottom: 3px solid maroon' disabled='notSelected' id='regulations'>
-				<div class='header p10'>
-					<span class='prompt'>☝ Regulations of</span>
-					<span class='currentTarget'></span> 
-					<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
-					<div class='fr templateInput'>
-						<span id='regulationPrompt' class='small quiet'>Make this a template</span>
-						<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
-					</div>	
-				</div>
-				<div id='regulationsList' class='sheet'>
-				</div>
-			</div>
-			<div class='section' disabled='notSelected' id='timespans'>
-				<div class='header p10' >
-						<span class='prompt'>☝ Timespans of</span>
-						<span class='currentTarget'></span> 
-
-<!-- 					<span id='regulationIndex' class='strong' style='color:maroon'></span>
- -->					<div class='fr templateInput'>
-						<span id='timeSpanPrompt' class='small quiet'>Make this a template</span>
-						<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
-					</div>					
-				</div>
-				<div id='timeSpansList' class='sheet'>
-				</div>
-			</div>
+		<div class='headerBar p10'>
+			<span class='strong'>CurbLR Digitizer</span>
+			<span class='button z100 fr' onclick='app.io.export()'>Export</span>
 		</div>
-		<div class='col6 fullHeight'>
-			<div class='halfHeight' id='map'>
-				<span class='button z100 p10 pin-topright m10' onclick='app.io.export()'>Export CurbLR</span>
+		<div style='position:absolute; bottom:0px; width:100%; top:46px'>
+			<div class='col6 fullHeight scroll' id='dataPanel'>
+				<div class='section' style='border-bottom:3px solid steelblue'>
+					<div class='header p10'>
+						Spans <div class='fr' id='featureFilter'></div>
+					</div>
+					<div id='featuresList' class='sheet'>
+					</div>
+				</div>
+				<div class='section' style='border-bottom: 3px solid maroon' disabled='notSelected' id='regulations'>
+					<div class='header p10'>
+						<span class='prompt'>☝ Regulations of</span>
+						<span class='currentTarget'></span> 
+						<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
+						<div class='fr templateInput'>
+							<span id='regulationPrompt' class='small quiet'>Make this a template</span>
+							<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
+						</div>	
+					</div>
+					<div id='regulationsList' class='sheet'>
+					</div>
+				</div>
+				<div class='section' disabled='notSelected' id='timespans'>
+					<div class='header p10' >
+							<span class='prompt'>☝ Timespans of</span>
+							<span class='currentTarget'></span> 
+
+						<div class='fr templateInput'>
+							<span id='timeSpanPrompt' class='small quiet'>Make this a template</span>
+							<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
+						</div>					
+					</div>
+					<div id='timeSpansList' class='sheet'>
+					</div>
+				</div>
 			</div>
-			<div class='halfHeight p10' id='images' style='overflow:scroll; white-space: nowrap; border-top:1px solid #ccc'>
-				<h3>Images</h3>
-			</div>		
+			<div class='col6 fullHeight'>
+				<div class='halfHeight' id='map'>
+				</div>
+				<div class='halfHeight p10' id='images' style='overflow:scroll; white-space: nowrap; border-top:1px solid #ccc'>
+					<h3>Images</h3>
+				</div>		
+			</div>
 		</div>
 	</body>
 	<script src="https://cdn.jsdelivr.net/npm/handsontable@8.0.0/dist/handsontable.full.min.js"></script>
