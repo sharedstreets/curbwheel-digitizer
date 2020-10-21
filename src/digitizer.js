@@ -197,7 +197,7 @@ var app = {
 
 			var map = new mapboxgl.Map({
 				container: 'map',
-				style: 'mapbox://styles/mapbox/light-v9'
+				style: 'mapbox://styles/mapbox/satellite-streets-v9'
 			})
 			.on('load', () => {
 
@@ -226,24 +226,106 @@ var app = {
 							data: app.state.data
 						},
 						layout: {
-							'line-cap':'round'
+							'line-cap':'round',
 						},
 						paint: {
-							'line-color': [
-								'match',
-								['get', 'id'],
-								0, 'steelblue',
-								'#ccc'
-							],
+							'line-color': 'black',
 							'line-width':{
 								base:1.5,
-								stops: [[6, 1], [22, 80]]
-							},
-							'line-opacity':0.75,
-							'line-offset': {
-								base:2,
-								stops: [[12, 3], [22, 100]]
+								stops: [[6, 1], [22, 50]]
 							}
+						}
+					})
+					.addLayer({
+						id: 'spans-core', 
+						type: 'line', 
+						source: {
+							type:'geojson',
+							data: app.state.data
+						},
+						layout: {
+							'line-cap':'round',
+						},
+						paint: {
+							'line-color': 'white',
+							'line-width':{
+								base:1.5,
+								stops: [[6, 1], [22, 10]]
+							}
+						}
+					})
+					.addLayer({
+						id: 'span-active', 
+						type: 'line', 
+						source: 'spans',
+						filter:['==', 'id', 'null'],
+						layout: {
+							'line-cap':'round',
+						},
+						paint: {
+							'line-color': 'steelblue',
+							'line-width':{
+								base:1.5,
+								stops: [[6, 1], [22, 100]]
+							}
+						}
+					})
+					.addLayer({
+						id: 'span-active-core', 
+						type:'line',
+						source: 'spans',
+						filter:['==', 'id', 'null'],
+						layout: {
+							'line-cap':'round',
+						},
+						paint: {
+							'line-color': 'white',
+							'line-width':{
+								base:1.5,
+								stops: [[6, 1], [22, 30]]
+							}
+						}
+					})
+					.addLayer({
+						id: 'span-active-arrows', 
+						type:'symbol',
+						source: 'spans',
+						minzoom:14,
+						filter:['==', 'id', 'null'],
+						layout: {
+							'symbol-placement': 'line',
+							'symbol-spacing':1,
+							'text-ignore-placement': true,
+							'text-field':{
+								property:'ref_side',
+								type:'categorical',
+								stops:[
+									['left', '↑'], 
+									['right', '↓']
+								]
+							},
+							'text-keep-upright':false,
+							'text-size':{
+								base:1.5,
+								stops: [[12, 30], [22, 60]]
+							},
+							'text-offset':{
+								property:'ref_side',
+								type:'categorical',
+								stops:[
+									['left', [0,-0.5]], 
+									['right', [0,0.5]]
+								]
+							}
+						},
+						paint: {
+							'text-color': 'white',
+							// 'text-halo-color':'steelblue', 
+							// 'text-halo-width':{
+							// 	base:1.5,
+							// 	stops: [[12, 5], [22, 12]]
+							// }
+							// 'text-translate-anchor':'viewport'
 						}
 					})
 			})
@@ -535,20 +617,18 @@ var app = {
 
 				app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
 
-
+				const filter = value.rawRange.length>1 ? ['in', 'id'].concat(value.rawRange) : ['in', 'id', value.rawRange]
 				
 				//update map
 				app.ui.map
-					.setPaintProperty('spans', 'line-color',
-						[
-							'match',
-							['get', 'id'],
-							value.rawRange, 
-							'steelblue',
-							'#ccc'
-						]
-					);
+					.setFilter('span-active', filter)
+					.setFilter('span-active-core', filter)
+					.setFilter('span-active-arrows', filter)
 
+				if (value.rawRange>-999) {
+					const bbox = turf.bbox(app.state.data.features[value.rawRange])
+					app.ui.map.fitBounds(bbox, {padding:30, maxZoom:18})
+				}
 			}
 
 			// if empty value, clear regulations sheet
