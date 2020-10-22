@@ -180,8 +180,8 @@ var app = {
 
 		// save current survey in localStorage
 		saveSurvey: () => {
-
-			localStorage.setItem('survey', JSON.stringify(app.state))
+			app.state.lastSaveTime = Date.now();
+			localStorage.setItem(`survey-${app.state.rootPath}`, JSON.stringify(app.state))
 			localStorage.setItem('lastSaveTime', Date.now())
 
 			console.log('saved')
@@ -195,29 +195,23 @@ var app = {
 
 
 			// check if there's a cached copy in localStorage, from previous session 
+			const previousSession = localStorage[`survey-${app.state.rootPath}`];
+			if (previousSession) {
 
-			if (localStorage.survey) {
+				const survey = JSON.parse(previousSession)
+				const time = app.utils.expressTime(Date.now()-survey.lastSaveTime);
+				const prompt = confirm(`This survey was last digitized ${time} ago. Resume the previous session?`)
 
-				const survey = JSON.parse(localStorage.survey)
-				// if requested url matches one in cache, offer to load last session
-
-				if (survey.rootPath === app.state.rootPath) {
-					const prompt = confirm('Recover progress from previous digitizing session?')
-
-					// if accept, load data from cache
-					if (prompt) {
-						app.state = survey;
-						app.init.map();
-						app.init.ui();
-					}
-
-					// if reject, fetch survey from scratch
-					else app.io.fetchSurvey()
-
+				// if accept, load data from cache
+				if (prompt) {
+					app.state = survey;
+					app.init.map();
+					app.init.ui();
 				}
 
-				// if no match, fetch survey from scratch
+				// if reject, fetch survey from scratch
 				else app.io.fetchSurvey()
+
 			}
 
 			// if no cached copy, fetch survey from scratch
@@ -255,21 +249,7 @@ var app = {
 
 							return entry			
 						})
-					// .forEach((d,i)=>{
 
-					// 	d.properties.id = i;
-						
-					// 	//create separate object for curblr properties
-					// 	d.output = {
-					// 		regulations:[],
-					// 		location:{}
-					// 	}
-
-					// 	// extract survey values into curblr
-					// 	app.constants.ui.entryParams
-					// 		.forEach(param=>{d.output.location[param.param] = d.properties[param.inputProp]})
-
-					// })
 
 					app.init.ui();
 
@@ -1215,6 +1195,29 @@ var app = {
 	},
 
 	utils: {
+
+		expressTime: (ms) => {
+
+			const thresholds = [
+				[1, 'second'],
+				[60, 'minute'],
+				[3600, 'hour'],
+				[3600*36, 'day'],
+				[Infinity, 'eternity']
+			]
+
+			var seconds = ms/1000;
+			var t = 0;
+			var quantity;
+			var unit;
+
+			while (seconds>thresholds[t+1][0]) {console.log('greater than', thresholds[t]);t++}
+			quantity = Math.round(seconds/thresholds[t][0])
+			unit = `${thresholds[t][1]}${quantity > 1 ? 's' : ''}`;
+			
+			return [quantity, unit].join(' ')
+		},
+
 		combineObjects: (a,b) => {
 			Object.keys(b).forEach(key=>a[key]=b[key]);
 			return a
@@ -1526,39 +1529,39 @@ var app = {
 				}
 			},
 
-			entryParams: [
-				{
-					param: 'shstRefId',
-					placeholder: 'unique identifier',
-					inputProp: 'shst_ref_id'
-				},
+			// entryParams: [
+			// 	{
+			// 		param: 'shstRefId',
+			// 		placeholder: 'unique identifier',
+			// 		inputProp: 'shst_ref_id'
+			// 	},
 
-				{
-					param: 'sideOfStreet',
-					placeholder: 'street side',
-					inputProp: 'ref_side'
-				},
+			// 	{
+			// 		param: 'sideOfStreet',
+			// 		placeholder: 'street side',
+			// 		inputProp: 'ref_side'
+			// 	},
 
-				{
-					param: 'shstLocationStart',
-					placeholder: 'start of regulation',
-					inputProp: 'dst_st'
-				},			
-				{
-					param: 'shstLocationEnd',
-					placeholder: 'end of regulation',
-					inputProp: 'dst_end'
-				},			
-				{
-					param: 'assetType',
-					inputProp: 'assetType'
-				},
-				{
-					param: 'assetSubtype',
-					defaultHidden: true
-				}					
+			// 	{
+			// 		param: 'shstLocationStart',
+			// 		placeholder: 'start of regulation',
+			// 		inputProp: 'dst_st'
+			// 	},			
+			// 	{
+			// 		param: 'shstLocationEnd',
+			// 		placeholder: 'end of regulation',
+			// 		inputProp: 'dst_end'
+			// 	},			
+			// 	{
+			// 		param: 'assetType',
+			// 		inputProp: 'assetType'
+			// 	},
+			// 	{
+			// 		param: 'assetSubtype',
+			// 		defaultHidden: true
+			// 	}					
 
-			]
+			// ]
 
 		},
 
