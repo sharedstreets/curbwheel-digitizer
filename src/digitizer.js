@@ -16,7 +16,7 @@ var app = {
 
 	io: {
 
-		cullEmptyRows: data => {
+		cullEmptyRows: (data) => {
 
 			var output = data.filter(row => {
 				const entries = Object.entries(row).map(keyValuePair=>keyValuePair[1]);
@@ -26,22 +26,33 @@ var app = {
 			return output
 		},
 
+		// 
 		resolveTemplateReference: (templateType, obj, indices)=>{
+
+			const cull = app.io.cullEmptyRows;
 
 			const paramName = `${templateType}Template`;
 			const value = obj[paramName];
-			const inlineValue = typeof value === 'string';
+			// entries using templates will have a string for the value
+			const itemUsesATemplate = typeof value === 'string';
 
 			var output;
 
-			if (inlineValue) output = app.state.templates[templateType+'s'][value]
+			// if using template, fetch template from template object
+			if (itemUsesATemplate) output = app.utils.clone(app.state.templates[templateType+'s'][value])
 
+			// if inline, retrieve the 
 			else {
-				if (indices.length===1) output = app.state.raw[templateType+'s'][indices[0]]
-				else {
-					const timeSpansOfRegulation = app.state.raw[templateType+'s'][indices[0]];
-					output = timeSpansOfRegulation ? timeSpansOfRegulation[indices[1]] : []
+				if (templateType === 'regulation') {
+					const rawRegulation = app.state.raw.regulations[indices[0]];
+					output = rawRegulation ? cull(app.utils.clone(rawRegulation)) : []
 				}
+
+				else {
+					const rawTimeSpan = app.state.raw.timeSpans[indices.join('-')];
+					output = rawTimeSpan ? cull(app.utils.clone(rawTimeSpan)) : []
+				}
+				
 			}
 
 			output = output || []
@@ -52,19 +63,27 @@ var app = {
 		export: () => {
 
 			const cull = app.io.cullEmptyRows;
-			const featuresData = cull(app.ui.featuresList.getSourceData());
+			const featuresData = app.ui.featuresList.getSourceData();
 
-			var exportedData = app.utils.clone(app.state.data).features.map((ft,i) => {
+			var exportedData = app.utils.clone(app.state.inputSurvey);
+
+			exportedData = exportedData.features.map((ft,i) => {
 
 				var regs = cull(app.io.resolveTemplateReference('regulation', featuresData[i], [i]));
-				
-				regs.forEach((regulation, rIndex)=>{
-					regulation.timeSpans = app.io.resolveTemplateReference('timeSpan', regulation, [i, rIndex])
+				regs.forEach((regulation, rIndex) => {
+					regulation.timeSpans = cull(app.io.resolveTemplateReference('timeSpan', regulation, [i, rIndex]))
 				})
 
-				ft.properties.output = {
+				ft.properties = {
 
-					location: app.utils.combineObjects(ft.output.location, featuresData[i]),
+					location: {
+						shstRefId: ft.properties['shst_ref_id'],
+						shstLocationStart: ft.properties.dst_st,
+						shstLocationEnd: ft.properties.dst_end,
+						assetType: featuresData[i].assetType,
+						assetSubtype: featuresData[i].assetSubType,
+					},
+
 					regulations: regs.map((reg, rIndex) => {
 
 						var output = {
@@ -78,7 +97,7 @@ var app = {
 								payment: reg.payment
 							},
 
-							payment: !reg.payment ? 'foo' : {
+							payment: !reg.payment ? undefined : {
 								rates: reg.rates,
 								durations: reg.durations,
 								methods: reg.methods,
@@ -89,7 +108,7 @@ var app = {
 
 							timeSpans: reg.timeSpans.map(span => {
 
-								var output = {
+								var tS = {
 
 									//form arrays of daysOfWeek and month occurrences
 									daysOfWeek: {
@@ -109,7 +128,7 @@ var app = {
 									}]
 								}
 
-								return output
+								return tS
 							})
 						}
 
@@ -117,9 +136,6 @@ var app = {
 					})
 				}
 
-				ft.properties = ft.properties.output
-
-				delete ft.output;
 				return ft
 			})
 
@@ -127,41 +143,15 @@ var app = {
 			exportedData = {
 				"type": "FeatureCollection",
 				"features": exportedData,
-				"manifest": {
-					"createdDate": new Date().toISOString(),
-					"lastUpdatedDate": "2020-10-10T17:40:45Z",
-					"priorityHierarchy": [
-						"no standing",
-						"construction",
-						"temporary restriction",
-						"restricted standing",
-						"standing",
-						"restricted loading",
-						"loading",
-						"no parking",
-						"restricted parking",
-						"paid parking",
-						"free parking"
-					],
-					"curblrVersion": "1.1.0",
-					"timeZone": "America/Los_Angeles",
-					"currency": "USD",
-					"unitHeightLength": "feet",
-					"unitWeight": "tons",
-					"authority": {
-						"name": "Your Transportation Agency Name",
-						"url": "https://www.youragencyurl.gov",
-						"phone": "+15551231234"
-					}
-				}
+				"manifest": app.constants.manifest
 			}
-
+			console.log(exportedData)
 
 			// prepare asset export
 
 			for (asset of app.state.assetExport.features) {
 				const relevantFeatureProperties = exportedData.features
-					.filter(ft=>ft.properties.location.shstRefId === asset.properties['shst_ref_id'])[0].properties.location;
+					.filter(ft => ft.properties.location.shstRefId === asset.properties['shst_ref_id'])[0].properties.location;
 				asset.properties.assetType = relevantFeatureProperties.assetType;
 				asset.properties.assetSubtype = relevantFeatureProperties.assetSubtype
 			}
@@ -172,6 +162,7 @@ var app = {
 		},
 
 		downloadItem: (payload, fileName) =>{
+			console.log(fileName, payload)
 			var element = document.createElement('a');
 			element.style.display = 'none';
 
@@ -185,13 +176,120 @@ var app = {
 
 			element.click();
 		    document.body.removeChild(element);
+		},
+
+		// save current survey in localStorage
+		saveSurvey: () => {
+
+			localStorage.setItem('survey', JSON.stringify(app.state))
+			localStorage.setItem('lastSaveTime', Date.now())
+
+			console.log('saved')
+		},
+
+		loadData: () =>{
+
+			// retrieve survey root path, with trailing slash ensured
+			app.state.rootPath = location.search.replace('?survey=', '') || 'src/sampleSurvey/';
+			if (app.state.rootPath[app.state.rootPath.length-1] !== '/') app.state.rootPath.push('/')
+
+
+			// check if there's a cached copy in localStorage, from previous session 
+
+			if (localStorage.survey) {
+
+				const survey = JSON.parse(localStorage.survey)
+				// if requested url matches one in cache, offer to load last session
+
+				if (survey.rootPath === app.state.rootPath) {
+					const prompt = confirm('Recover progress from previous digitizing session?')
+
+					// if accept, load data from cache
+					if (prompt) {
+						app.state = survey;
+						app.init.map();
+						app.init.ui();
+					}
+
+					// if reject, fetch survey from scratch
+					else app.io.fetchSurvey()
+
+				}
+
+				// if no match, fetch survey from scratch
+				else app.io.fetchSurvey()
+			}
+
+			// if no cached copy, fetch survey from scratch
+			else app.io.fetchSurvey()
+		},
+
+		fetchSurvey: () =>{
+			// download spans
+			d3.json(app.state.rootPath+'spans.json', (e,r)=>{
+
+				if (e) alert('No survey found at this url. Ensure the survey path is valid, preceded by "?survey=" in the url of this page.')
+
+				// initiate UI, and fetch points json for eventual asset export
+				else {
+
+					app.state.inputSurvey = r
+
+					app.state.inputSurvey.features
+						.sort((a,b)=>a.properties.label>b.properties.label ? 1 : -1)
+						.forEach((d,i)=>{
+							d.properties.id = i;
+						});
+
+					app.init.map();
+
+					// prep data, sorted by label
+					app.state.raw.features = app.state.inputSurvey.features
+						.map(f=>{
+							//create separate object for curblr properties
+
+							var entry = {}	
+							// extract survey values into curblr
+							app.constants.ui.tableColumns.featuresList
+								.forEach(param=>{entry[param.data] = f.properties[param.data]})		
+
+							return entry			
+						})
+					// .forEach((d,i)=>{
+
+					// 	d.properties.id = i;
+						
+					// 	//create separate object for curblr properties
+					// 	d.output = {
+					// 		regulations:[],
+					// 		location:{}
+					// 	}
+
+					// 	// extract survey values into curblr
+					// 	app.constants.ui.entryParams
+					// 		.forEach(param=>{d.output.location[param.param] = d.properties[param.inputProp]})
+
+					// })
+
+					app.init.ui();
+
+
+
+					d3.json(app.state.rootPath+'points.json', (pointsError,r)=>{
+
+						if (pointsError) alert('No asset metadata found at the provided path. Ensure there is a "points.json" file in this directory.')
+						app.state.assetExport = r;
+					})
+				}
+			
+			})	
 		}
 	},
 
 
 	init: {
 
-		map: () => {
+		map: (geometry) => {
 
 			mapboxgl.accessToken = "pk.eyJ1IjoibW9yZ2FuaGVybG9ja2VyIiwiYSI6Ii1zLU4xOWMifQ.FubD68OEerk74AYCLduMZQ";
 
@@ -201,29 +299,16 @@ var app = {
 			})
 			.on('load', () => {
 
-				map.fitBounds(turf.bbox(app.state.data), {duration:200, padding:100});
+				const geometry = app.state.inputSurvey;
+
+				map.fitBounds(turf.bbox(geometry), {duration:200, padding:100});
 				map
-					// .addLayer({
-					// 	id: 'spans', 
-					// 	type: 'fill-extrusion', 
-					// 	source: {
-					// 		type:'geojson',
-					// 		data: data
-					// 	},
-					// 	paint: {
-					// 		'fill-extrusion-color':'red',
-					// 		'fill-extrusion-base': 2,
-					// 		'fill-extrusion-height':10,
-					// 		// 'line-width':5,
-					// 		'fill-extrusion-opacity':0.2
-					// 	}
-					// })
 					.addLayer({
 						id: 'spans', 
 						type: 'line', 
 						source: {
 							type:'geojson',
-							data: app.state.data
+							data: geometry
 						},
 						layout: {
 							'line-cap':'round',
@@ -308,79 +393,49 @@ var app = {
 
 		ui: () =>{
 
-			// prep data, sorted by label
-			app.state.data.features
-			.sort((a,b)=>a.properties.label>b.properties.label ? 1 : -1)
-			.forEach((d,i)=>{
-
-				d.properties.id = i;
-				
-				//create separate object for curblr properties
-				d.output = {
-					regulations:[],
-					location:{}
-				}
-
-				// extract survey values into curblr
-				app.constants.ui.entryParams
-					.forEach(param=>{d.output.location[param.param] = d.properties[param.inputProp]})
-
-			})
-
 			
 			// BUILD FILTERS
 
-			var setupFilter = () => {
+			// var setupFilter = () => {
 
-				// Event for `keydown` event. Add condition after delay of 200 ms which is counted from time of last pressed key.
-				var debounceFn = Handsontable.helper.debounce(function (colIndex, event) {
+			// 	// Event for `keydown` event. Add condition after delay of 200 ms which is counted from time of last pressed key.
+			// 	var debounceFn = Handsontable.helper.debounce(function (colIndex, event) {
 
-					var filtersPlugin = featuresList.getPlugin('filters');
+			// 		var filtersPlugin = featuresList.getPlugin('filters');
 
-					filtersPlugin.removeConditions(colIndex);
-					filtersPlugin.addCondition(colIndex, 'contains', [event.target.value]);
-					filtersPlugin.filter();
-					}, 200);
+			// 		filtersPlugin.removeConditions(colIndex);
+			// 		filtersPlugin.addCondition(colIndex, 'contains', [event.target.value]);
+			// 		filtersPlugin.filter();
+			// 		}, 200);
 
-					var addEventListeners =  (input, colIndex) => {
-						input.addEventListener('keydown', event => debounceFn(colIndex, event));
-					};
+			// 		var addEventListeners =  (input, colIndex) => {
+			// 			input.addEventListener('keydown', event => debounceFn(colIndex, event));
+			// 		};
 
-				// Build elements which will be displayed in header.
-				var getInitializedElements = function(colIndex) {
-					var div = document.createElement('div');
-					var input = document.createElement('input');
-					input.placeholder = 'Filter by label';
-					input.style.height = '100%'
-					div.className = 'filterHeader';
+			// 	// Build elements which will be displayed in header.
+			// 	var getInitializedElements = function(colIndex) {
 
-					addEventListeners(input, colIndex);
+			// 		var div = document.createElement('div');
+			// 		var input = document.createElement('input');
+			// 		input.placeholder = 'Filter by label';
+			// 		input.style.height = '100%'
+			// 		div.className = 'filterHeader';
 
-					div.appendChild(input);
+			// 		addEventListeners(input, colIndex);
 
-					return div;
-				};
+			// 		div.appendChild(input);
 
-				document.querySelector('#featureFilter')
-					.appendChild(getInitializedElements(0));
-			}
+			// 		return div;
+			// 	};
 
-			setupFilter()
+			// 	document.querySelector('#featureFilter')
+			// 		.appendChild(getInitializedElements(0));
+			// }
+
+			// setupFilter()
 			app.constants.ui.tableColumns.timeSpansList[0].source=
 			app.constants.ui.tableColumns.timeSpansList[1].source=
 			app.utils.makeTimes();
-
-			// form features data for table
-			app.state.raw.features = app.state.data.features
-				.map((f,i)=>{
-
-					const p = f.properties;
-
-					var output = {};
-					const featuresList = app.constants.ui.tableColumns.featuresList
-					for (key of featuresList.map(c=>c.data)) output[key] = p[key]
-					return output
-				})
 
 			var featuresList = new Handsontable(
 
@@ -389,8 +444,9 @@ var app = {
 				{
 				
 					data: app.state.raw.features,
+
 					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.featuresList.map(r=>r.data)),
-					width:'100%',
+					width: '100%',
 					rowHeaders: true,
 					colHeaders: app.constants.ui.tableColumns.featuresList.map(c=>c.data),
 					filters: true,
@@ -526,6 +582,8 @@ var app = {
 			//prevent inadvertent browser-back behavior from overscrolling
 			d3.selectAll('.section')
 				.on('wheel', ()=>event.preventDefault())
+
+			setInterval(app.io.saveSurvey, 5000)
 		}
 	},
 
@@ -546,7 +604,7 @@ var app = {
 				images
 					.selectAll('img')
 					.data(
-						app.state.data.features[value.inlineFeature]
+						app.state.inputSurvey.features[value.inlineFeature]
 							.properties.images
 					)
 
@@ -597,8 +655,8 @@ var app = {
 					.setFilter('span-active', filter)
 					.setFilter('span-active-core', filter)
 
-				if (value.rawRange>-999) {
-					const bbox = turf.bbox(app.state.data.features[value.rawRange])
+				if (value.rawRange > -999) {
+					const bbox = turf.bbox(app.state.inputSurvey.features[value.rawRange])
 					app.ui.map.fitBounds(bbox, {padding:30, maxZoom:18})
 				}
 			}
@@ -618,19 +676,24 @@ var app = {
 			if (!value.disabledMessage) {
 				const singleRowSelected = value.inlineRegulation>=0;
 
-				// UPDATE REGULATIONS SHEET
+				// UPDATE TIMESPANS SHEET
 				var timeSpanToRender;
 				const existingTemplate = app.state.templates.timeSpans[value.template];
 
 				if (value.template) timeSpanToRender = existingTemplate || [];
 				
+				// if currently selecting a single inline regulation
 				else if (singleRowSelected) {
 
 					const singleIF = app.state.currentRegulationTarget.inlineFeature;
 
+					// if currently selecting a single inline feature
 					if (singleIF>=0) {
-						if (!app.state.raw.timeSpans[singleIF]) app.state.raw.timeSpans[singleIF] = []
-						timeSpanToRender = app.state.raw.timeSpans[singleIF][value.inlineRegulation] || []
+						console.log('single row, singleif')
+						// if (!app.state.raw.timeSpans[singleIF]) app.state.raw.timeSpans[singleIF] = []
+						// timeSpanToRender = app.state.raw.timeSpans[singleIF][value.inlineRegulation] || []
+						timeSpanToRender = app.state.raw.timeSpans[singleIF+'-'+value.inlineRegulation] || []
+
 					}
 
 					else timeSpanToRender = []
@@ -701,9 +764,8 @@ var app = {
 
 				if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
 				else targetFeatures.forEach(fIndex=>{
-					app.state.raw[fIndex] = app.state.raw[fIndex] || {}
 					targetRegulations.forEach(rIndex=>{
-						app.state.raw[fIndex][rIndex] = data
+						app.state.raw.timeSpans[fIndex+'-'+rIndex] = data
 					})
 				})
 
@@ -869,7 +931,7 @@ var app = {
 
 				e.target.blur();
 
-				oldData = app.ui.featuresList.getSourceData();
+				var fLData = app.ui.featuresList.getSourceData();
 
 				// if editing a template
 				if (cRT.template){
@@ -882,7 +944,7 @@ var app = {
 
 					//change all references of old template, to new
 
-					oldData.forEach(row=>{
+					fLData.forEach(row=>{
 						if (row.regulationTemplate===oldTemplateName) row.regulationTemplate = text
 					})
 
@@ -896,8 +958,8 @@ var app = {
 
 					// apply template to active feature(s)
 					const iFs = cRT.inlineFeatures
-					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) oldData[f].regulationTemplate = text;
-					else oldData[cRT.inlineFeature].regulationTemplate = text;
+					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) fLData[f].regulationTemplate = text;
+					else fLData[cRT.inlineFeature].regulationTemplate = text;
 
 				}
 
@@ -908,8 +970,8 @@ var app = {
 
 				app.setState('currentRegulationTarget', newCRT)
 				app.ui.updateTemplateTypeahead('regulations')
-				app.ui.featuresList.loadData(oldData);
-
+				app.ui.featuresList.loadData(fLData);
+				app.state.raw.features = fLData;
 			}
 		},
 
@@ -1047,8 +1109,7 @@ var app = {
 		},
 
 		updateTemplateTypeahead: (templateType)=>{
-			// TODO: make this work for timespan templates		
-			// if (templateType ==='timeSpans') return
+
 			const extantTemplates = Object.keys(app.state.templates[templateType]);
 
 			const parentList = {
@@ -1128,10 +1189,10 @@ var app = {
 
 								const cRT = app.state.currentRegulationTarget;
 
-								if (cRT.inlineRegulation) app.state.raw.timeSpans[cRT.inlineRegulation][row] = oldTemplateContents
+								if (cRT.inlineRegulation) app.state.raw.timeSpans[cRT.inlineRegulation+'-'+row] = oldTemplateContents
 								
 								else for (var s = cRT.inlineRegulations[0]; s<=cRT.inlineRegulations[1]; s++){
-									app.state.raw.timeSpans[s][row] = oldTemplateContents
+									app.state.raw.timeSpans[s+'-'+row] = oldTemplateContents
 								}
 							}
 						}
@@ -1190,10 +1251,12 @@ var app = {
 
 				featuresList:[
 					{
-						data: 'label'
+						data: 'label',
+						paramName: 'label'
 					},
 					{
 						data: 'ref_side',
+						paramName: 'sideOfStreet',
 						type: 'dropdown',
 						source: ['left', 'right', 'unknown'],
 						strict: true,
@@ -1228,7 +1291,6 @@ var app = {
 						placeholder: 'NA',
 						visibleRows: 20,
 					},
-
 					{
 						data: 'regulationTemplate',
 						type: 'text',
@@ -1423,7 +1485,7 @@ var app = {
 					destinationProp: 'assetSubtype',
 					propagatingValues: {
 
-						'pavement marking': {
+						'curb cut': {
 							placeholder: 'Marking type',
 							values: [
 								'ramp', 
@@ -1432,7 +1494,7 @@ var app = {
 							]
 						},
 
-						'curb cut': {
+						'pavement marking': {
 							placeholder: 'Cut type',
 							values: [
 								'bike', 
@@ -1451,7 +1513,14 @@ var app = {
 						},
 
 						'curb paint': {
-							placeholder: 'Paint color'
+							placeholder: 'Paint color',
+							values: [
+								'red',
+								'yellow',
+								'white',
+								'blue',
+								'green'
+							]
 						},
 					}					
 				}
@@ -1481,185 +1550,16 @@ var app = {
 					inputProp: 'dst_end'
 				},			
 				{
-					param: 'assetType'
+					param: 'assetType',
+					inputProp: 'assetType'
 				},
 				{
 					param: 'assetSubtype',
 					defaultHidden: true
 				}					
 
-			],
-
-			timeSpanParams: [
-				{
-					param: 'daysOfWeek',
-					placeholder: 'Comma-delimited values'
-				},
-				{
-					param: 'timesOfDay',
-					placeholder: 'Comma-delimited, each in HH:MM-HH:MM'				
-				}
 			]
-		},
 
-
-		validate: {
-
-			shstRefId: {
-				type: 'string',
-				output: ['output', 'location']
-			},
-
-			sideOfStreet: {
-				type: 'string',
-				output: ['output', 'location'],
-				oneOf: ['left', 'right', 'unknown'],
-				allowCustomValues: false
-			},
-
-			shstLocationStart: {
-				type: 'number',
-				output: ['output', 'location'],
-				transform: input => parseFloat(input)
-			},	
-
-			shstLocationEnd: {
-				type: 'number',
-				output: ['output', 'location'],
-				transform: input => parseFloat(input)
-			},	
-
-			assetType: {
-				type: 'string', 
-				oneOf: [
-					'sign', 
-					'curb paint', 
-					'hydrant', 
-					'bus stop', 
-					'crosswalk', 
-					'bike rack', 
-					'curb extension', 
-					'bollards', 
-					'fence', 
-					'parking meter',
-					'pavement marking',
-					'curb cut'
-				],
-				output: ['output', 'location'],
-				allowCustomValues: false,
-				subParameter: 'assetSubtype',
-
-			},
-
-			assetSubtype: {
-				allowCustomValues: true,
-				output: ['output', 'location'],
-			},
-
-			activity: {
-				oneOf: [
-					'standing', 
-					'no standing', 
-					'loading', 
-					'no loading', 
-					'parking', 
-					'no parking'
-				],
-				allowCustomValues: false,
-				output: ['rule']
-			},
-			
-			maxStay: {
-				type: 'number',
-				oneOf: [5, 10, 15, 20, 30, 45, 60, 120, 180, 240, 300, 360, 480],
-				allowCustomValues: false,
-				output: ['rule']
-			},
-
-			payment: {
-				type: 'number',
-				oneOf: [false, true],
-				allowCustomValues: false,
-				output: ['rule']
-			},
-
-			userClasses: {
-				oneOf: [
-					'bicycle', 
-					'bikeshare', 
-					'bus', 
-					'car share', 
-					'carpool', 
-					'commercial', 
-					'compact', 
-					'construction', 
-					'diplomat', 
-					'electric', 
-					'emergency', 
-					'food truck', 
-					'handicap', 
-					'micromobility', 
-					'motorcycle', 
-					'official', 
-					'passenger', 
-					'permit', 
-					'police', 
-					'rideshare', 
-					'staff', 
-					'student', 
-					'taxi', 
-					'truck', 
-					'visitor'
-				],
-				output: ['rule'],
-				allowCustomValues: true,
-				transform: input => input.split(', ')
-			},
-
-			userSubClasses: {
-				type: 'array',
-				arrayMemberType: 'string',
-				allowCustomValues: true,
-				output: ['rule'],
-				transform: input => input.split(', ')
-			},
-
-			daysOfWeek: {
-				type: 'array',
-				arrayMemberType:'string',
-				allowCustomValues: false,
-				inputType: 'text',
-				oneOf: ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'],
-				transform: input => input.split(', '),
-				output: ['rule']
-			},
-			occurrencesInMonth: {
-				type: 'array',
-				arrayMemberType:'string',
-				allowCustomValues: false,
-				inputType: 'text',
-				oneOf: ['1st', '2nd', '3rd', '4th', '5th', 'last'],
-				transform: input => input.split(', '),
-				output: ['rule']
-			},
-			timesOfDay: {
-				type: 'array',
-				arrayMemberType:'string',
-				allowCustomValues: true,
-				transform: (input)=>{
-					var arr = input.split(', ')
-						.map(period=>{
-							var startEnd = period.split('-');
-							return {
-								start: startEnd[0],
-								end: startEnd[1]
-							}
-						})
-
-					return arr
-				},
-				output: ['rule']
-			}
 		},
 
 		timeSpansCollapsingScheme: [
@@ -1668,6 +1568,33 @@ var app = {
 		regulationsCollapsingScheme: [
 			{row:-2, col:0, collapsible:true}
 		],
+		manifest:{
+			"createdDate": new Date().toISOString(),
+			"lastUpdatedDate": "2020-10-10T17:40:45Z",
+			"priorityHierarchy": [
+				"no standing",
+				"construction",
+				"temporary restriction",
+				"restricted standing",
+				"standing",
+				"restricted loading",
+				"loading",
+				"no parking",
+				"restricted parking",
+				"paid parking",
+				"free parking"
+			],
+			"curblrVersion": "1.1.0",
+			"timeZone": "America/Los_Angeles",
+			"currency": "USD",
+			"unitHeightLength": "feet",
+			"unitWeight": "tons",
+			"authority": {
+				"name": "Your Transportation Agency Name",
+				"url": "https://www.youragencyurl.gov",
+				"phone": "+15551231234"
+			}
+		},
 		regulation: {
 
 		}

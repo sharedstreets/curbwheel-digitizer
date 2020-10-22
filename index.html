@@ -284,31 +284,7 @@
 	<script src="https://d3js.org/d3.v4.min.js"></script>
 
 	<script>
-
-		// retrieve survey root path, with trailing slash ensured
-		app.state.rootPath = location.search.replace('?survey=', '') || 'src/sampleSurvey/';
-		if (app.state.rootPath[app.state.rootPath.length-1] !== '/') app.state.rootPath.push('/')
-
-		// download spans
-		d3.json(app.state.rootPath+'spans.json', (e,r)=>{
-
-			if (e) alert('No survey found. Ensure the survey path is valid, preceded by "?survey=" in the url of this page.')
-
-			// initiate UI, and fetch points json for eventual asset export
-			else {
-
-				app.state.data = r;
-				app.init.map();
-				app.init.ui();
-
-				d3.json(app.state.rootPath+'points.json', (pointsError,r)=>{
-
-					if (pointsError) alert('No asset metadata found at the provided path. Ensure there is a "points.json" file in this directory.')
-					app.state.assetExport = r;
-				})
-			}
-		
-		})	
+		app.io.loadData()
 
 	</script>
 	<script src='src/turf.min.js'></script>
