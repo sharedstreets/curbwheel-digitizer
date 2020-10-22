@@ -149,15 +149,24 @@ var app = {
 
 			// prepare asset export
 
+			const assetLookupTable = {}
+
+			for (feature of exportedData.features){
+				const locationProps = feature.properties.location;
+				console.log(locationProps.shstRefId)
+				assetLookupTable[locationProps.shstRefId] = {type: locationProps.assetType, subtype:locationProps.assetSubtype }
+				// console.log(JSON.stringify(assetLookupTable))
+			}
+
 			for (asset of app.state.assetExport.features) {
-				const relevantFeatureProperties = exportedData.features
-					.filter(ft => ft.properties.location.shstRefId === asset.properties['shst_ref_id'])[0].properties.location;
-				asset.properties.assetType = relevantFeatureProperties.assetType;
-				asset.properties.assetSubtype = relevantFeatureProperties.assetSubtype
+
+				const targetFeature = assetLookupTable[asset.properties['shst_ref_id']];
+				asset.properties.assetType = targetFeature.type;
+				asset.properties.assetSubtype = targetFeature.subtype
 			}
 
 			app.io.downloadItem(exportedData, 'curblr_'+Date.now()+'.json');
-			app.io.downloadItem(app.state.assetExport, 'assets_'+Date.now()+'.json');
+			app.io.downloadItem(app.state.assetExport, 'assets_'+Date.now()+'.geojson');
 
 		},
 
@@ -294,7 +303,10 @@ var app = {
 							'line-cap':'round',
 						},
 						paint: {
-							'line-color': 'steelblue',
+							'line-color': 'orangered',
+							'line-opacity':{
+								stops:[[16,1], [22, 0.25]]
+							},
 							'line-width':{
 								base:1.5,
 								stops: [[6, 1], [22, 20]]
@@ -321,7 +333,7 @@ var app = {
 							'line-cap':'round',
 						},
 						paint: {
-							'line-color': 'steelblue',
+							'line-color': 'orangered',
 							'line-width':{
 								base:1.5,
 								stops: [[6, 1], [22, 60]]
@@ -890,6 +902,7 @@ var app = {
 				const newCTT = {template:text, rawRange:cTT.rawRange}
 				app.setState('currentTimeSpanTarget', newCTT)
 				app.ui.updateTemplateTypeahead('timeSpans')
+				app.ui.collapseTables()
 
 			}
 		},
@@ -1211,7 +1224,7 @@ var app = {
 			var quantity;
 			var unit;
 
-			while (seconds>thresholds[t+1][0]) {console.log('greater than', thresholds[t]);t++}
+			while (seconds>thresholds[t+1][0]) t++
 			quantity = Math.round(seconds/thresholds[t][0])
 			unit = `${thresholds[t][1]}${quantity > 1 ? 's' : ''}`;
 			
