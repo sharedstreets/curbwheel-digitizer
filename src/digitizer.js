@@ -613,19 +613,29 @@ var app = {
 
 			if (!value.disabledMessage) {
 
-				const singleRowSelected = value.inlineFeature>=0;
 				const existingTemplate = app.state.templates.regulations[value.template];
 
 				// update regulations sheet heading
 				const vIndex = value.visualRange;
+				const singleRowSelected = typeof vIndex === 'number';
 
+				// populate span number if inline (template populated by CSS atr)
 				d3.select('#regulations .currentTarget')
 					.attr('type', value.template)
-					.attr('inline', value.template ? undefined : `span${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
+					.attr('inline', ()=> {
+						
+						if (value.template) return undefined
 
+						else if (singleRowSelected) return `span #${vIndex+1}`
+						else return `spans #${vIndex.map(n=>n+1).join('-')}`
+
+					})
+
+				console.log(value)
+				
 				// update regulations input call to action: rename template if currently one, create template if currently isn't
 				d3.select('#regulationPrompt')
-					.text(existingTemplate ? 'Rename' : 'Make this a template')
+					.text(existingTemplate ? 'Rename template' : 'Make this a template')
 
 				d3.select('#regulationInput')
 					.property('value', value.template || '')
@@ -666,8 +676,10 @@ var app = {
 				.attr('disabled', value.disabledMessage || undefined)
 
 			if (!value.disabledMessage) {
-				const singleRowSelected = value.inlineRegulation>=0;
 
+				const vIndex = value.visualRange;
+				const singleRowSelected = typeof vIndex === 'number';
+				
 				// UPDATE TIMESPANS SHEET
 				var timeSpanToRender;
 				const existingTemplate = app.state.templates.timeSpans[value.template];
@@ -680,29 +692,27 @@ var app = {
 					const singleIF = app.state.currentRegulationTarget.inlineFeature;
 
 					// if currently selecting a single inline feature
-					if (singleIF>=0) {
-						console.log('single row, singleif')
-						// if (!app.state.raw.timeSpans[singleIF]) app.state.raw.timeSpans[singleIF] = []
-						// timeSpanToRender = app.state.raw.timeSpans[singleIF][value.inlineRegulation] || []
-						timeSpanToRender = app.state.raw.timeSpans[singleIF+'-'+value.inlineRegulation] || []
+					if (singleIF>=0) timeSpanToRender = app.state.raw.timeSpans[singleIF+'-'+value.inlineRegulation] || []
 
-					}
-
-					else timeSpanToRender = []
 				}
 				
 				else if (value.inlineRegulations) timeSpanToRender = [];
 
 				// update regulations sheet heading
-				const vIndex = value.visualRange;
 
 				d3.select('#timespans .currentTarget')
 					.attr('type', value.template)
-					.attr('inline', value.template ? undefined : `regulation${singleRowSelected ? ' #'+(vIndex+1) : 's #'+vIndex.map(n=>n+1).join('-')}`)
+					.attr('inline', ()=> {
+						
+						if (value.template) return undefined
 
+						else if (singleRowSelected) return `span #${vIndex+1}`
+						else return `spans #${vIndex.map(n=>n+1).join('-')}`
+
+					})
 				//update regulations input call to action: rename template if currently one, create template if currently isn't
 				d3.select('#timeSpanPrompt')
-					.text(existingTemplate ? 'Rename' : 'Make this a template')
+					.text(existingTemplate ? 'Rename template' : 'Make this a template')
 
 				d3.select('#timeSpanInput')
 					.property('value', value.template || '')
@@ -1113,13 +1123,7 @@ var app = {
 			var defaultColumns = app.utils.clone(app.constants.ui.tableColumns[parentList[templateType]]);
 			defaultColumns[defaultColumns.length-1].type = 'autocomplete';
 			defaultColumns[defaultColumns.length-1].source = extantTemplates;
-			// defaultColumns[defaultColumns.length-1] = {
-			// 	data: (templateType+'Template').replace('sTemplate', 'Template'),
-			// 	type: 'autocomplete',
-			// 	source: extantTemplates,
-			// 	className:' steelblue',
-			// 	placeholder: 'Unique values'
-			// }
+
 
 			app.ui[parentList[templateType]].updateSettings({
 				columns: defaultColumns
@@ -1199,8 +1203,7 @@ var app = {
 				
 					const upperCase = kind.charAt(0).toUpperCase() + kind.slice(1)
 					if (templateChanges.length ===1) app.setState(`current${upperCase}Target`, cT)
-					else console.log('multiple template changes. need to handle?')
-				
+					// else console.log('multiple template changes. need to handle?')
 				})
 
 			app.ui.updateTemplateTypeahead(templateType)
