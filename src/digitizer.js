@@ -609,7 +609,7 @@ var app = {
 
 				if (value.template) regulationToRender = existingTemplate || [];
 				else if (singleRowSelected) regulationToRender = app.state.raw.regulations[value.inlineFeature] || []
-				else if (value.inlineFeatures) regulationToRender = [];
+				else if (value.inlineFeatures) console.log('deprecated')//regulationToRender = [];
 
 				app.ui.regulationsList.loadData(app.utils.clone(regulationToRender))
 
@@ -716,21 +716,22 @@ var app = {
 			setTimeout(() => {
 
 				var data = app.ui.timeSpansList.getSourceData();
-				var templateName = app.ui.regulationsList.getSourceDataAtCell(app.state.activeRegulationIndex, 12);
 				const cRT = app.state.currentRegulationTarget;				
 				const cTT = app.state.currentTimeSpanTarget;
-				const targetFeatures = [cRT.inlineFeature] || cRT.inlineFeatures;
-				const targetRegulations = [cTT.inlineRegulation] || cTT.inlineRegulations
-				const singleRegulationSelected = !cTT.inlineRegulations;
 
-				const targetRegulationTemplate = cRT.template
-
+				// if the current timespan target is a template, apply data to template
 				if (cTT.template) app.state.templates.timeSpans[cTT.template] = data
-				else targetFeatures.forEach(fIndex=>{
-					targetRegulations.forEach(rIndex=>{
-						app.state.raw.timeSpans[fIndex+'-'+rIndex] = data
+
+				// if the current target is inline, apply it to the right key in feature-regulation format
+				else {
+					const targetFeatures = [cRT.inlineFeature] || cRT.inlineFeatures;
+					const targetRegulations = [cTT.inlineRegulation] || cTT.inlineRegulations;
+					targetFeatures.forEach(fIndex=>{
+						targetRegulations.forEach(rIndex=>{
+							app.state.raw.timeSpans[fIndex+'-'+rIndex] = data
+						})
 					})
-				})
+				}
 
 			}, 1)
 			
@@ -801,11 +802,11 @@ var app = {
 				
 				// if multiple features selected, overwrite with inline regulations
 				else {
-
-					for (var f = cRT.inlineFeatures[0]; f<=cRT.inlineFeatures[1]; f++) {
-						app.state.raw.regulations[f] = data
-						app.ui.featuresList.setSourceDataAtCell(f, 4, undefined)
-					}
+					console.warn('changed regulations on multiple features. deprecated.')
+					// for (var f = cRT.inlineFeatures[0]; f<=cRT.inlineFeatures[1]; f++) {
+					// 	app.state.raw.regulations[f] = data
+					// 	app.ui.featuresList.setSourceDataAtCell(f, 4, undefined)
+					// }
 				}
 													
 			}, 1)
@@ -866,7 +867,7 @@ var app = {
 				if (cRT.template) app.state.templates.regulations[cRT.template] = oldData
 				else {
 					const iFs = cRT.inlineFeatures;
-					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) app.state.raw.regulations[f] = oldData
+					if (iFs) console.log('deprecated')//for (var f=iFs[0]; f<=iFs[1]; f++) app.state.raw.regulations[f] = oldData
 					else app.state.raw.regulations[cRT.inlineFeature] = oldData
 				}
 				app.ui.regulationsList.loadData(oldData);
@@ -923,7 +924,7 @@ var app = {
 
 					// apply template to active feature(s)
 					const iFs = cRT.inlineFeatures
-					if (iFs) for (var f=iFs[0]; f<=iFs[1]; f++) fLData[f].regulationTemplate = text;
+					if (iFs) console.log('deprecated')//for (var f=iFs[0]; f<=iFs[1]; f++) fLData[f].regulationTemplate = text;
 					else fLData[cRT.inlineFeature].regulationTemplate = text;
 
 				}

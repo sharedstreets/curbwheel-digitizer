@@ -146,6 +146,7 @@
 				margin: 4px auto;
 				display: block;
 				transition:transform 0.25s;
+				filter:grayscale(100%);
 			}
 			
 			.handsontable td:hover .htCheckboxRendererInput {
@@ -216,17 +217,14 @@
 
 			.handsontable td.steelblue {
 				color:steelblue;
-				font-weight:bold;
 			}
 
 			.handsontable td.maroon {
 				color:maroon;
-				font-weight: bold
 			}
 			
 			.handsontable .htPlaceholder {
 				color: #999 !important;
-				/*text-align: left;*/
 				font-style: italic;
 				font-weight: 100 !important;
 			}
@@ -254,8 +252,11 @@
 						<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
 						<div class='fr templateInput'>
 							<span id='regulationPrompt' class='small quiet'>Make this a template</span>
-							<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
-							<span onclick='' class='button fr' style='padding:0px 10px; border-radius:0px'>➔</span>
+							<div class='inlineBlock'>
+
+								<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
+								<span onclick='' class='button fr' style='padding:0px 10px; border-radius:0px'>➔</span>
+							</div>
 						</div>	
 					</div>
 					<div id='regulationsList' class='sheet'>
