@@ -42,11 +42,11 @@
 			}
 
 			#regulations[disabled='notSelected'] .header:after {
-				content:'Select a span or regulationTemplate to edit its regulations';
+				content:'☝ Select a span above to edit its regulations';
 			}
 
 			#timespans[disabled='notSelected'] .header:after {
-				content:'Select a regulation or timeSpanTemplate to edit its timespans';
+				content:'☝ Select a regulation above to edit its timespans';
 			}
 			#regulations[disabled='containsTemplate'] .header:after,
 			#timespans[disabled='containsTemplate'] .header:after {
@@ -103,7 +103,6 @@
 			}
 
 			input {
-				border-radius: 2px;
 				border: none;
 				background:#f3f3f3;
 			}
@@ -146,6 +145,11 @@
 			.handsontable .htCheckboxRendererInput {
 				margin: 4px auto;
 				display: block;
+				transition:transform 0.25s;
+			}
+			
+			.handsontable td:hover .htCheckboxRendererInput {
+				transform:scale(1.75);
 			}
 			.handsontable tr:first-child th {
 			  vertical-align: bottom;
@@ -251,6 +255,7 @@
 						<div class='fr templateInput'>
 							<span id='regulationPrompt' class='small quiet'>Make this a template</span>
 							<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
+							<span onclick='' class='button fr' style='padding:0px 10px; border-radius:0px'>➔</span>
 						</div>	
 					</div>
 					<div id='regulationsList' class='sheet'>
@@ -263,7 +268,10 @@
 
 						<div class='fr templateInput'>
 							<span id='timeSpanPrompt' class='small quiet'>Make this a template</span>
-							<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
+							<div class='inlineBlock'>
+								<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
+								<span onclick='' class='button fr' style='padding:0px 10px; border-radius:0px; background:maroon'>➔</span>
+							</div>
 						</div>					
 					</div>
 					<div id='timeSpansList' class='sheet'>

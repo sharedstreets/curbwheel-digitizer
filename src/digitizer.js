@@ -16,11 +16,12 @@ var app = {
 
 	io: {
 
+		// cull table rows that are entirely nulls/falses/undefineds 
 		cullEmptyRows: (data) => {
 
 			var output = data.filter(row => {
 				const entries = Object.entries(row).map(keyValuePair=>keyValuePair[1]);
-				return entries.filter(item => item!== null && item !== undefined).length>0
+				return entries.filter(item => !item).length>0
 			})
 
 			return output
@@ -385,46 +386,6 @@ var app = {
 
 		ui: () =>{
 
-			
-			// BUILD FILTERS
-
-			// var setupFilter = () => {
-
-			// 	// Event for `keydown` event. Add condition after delay of 200 ms which is counted from time of last pressed key.
-			// 	var debounceFn = Handsontable.helper.debounce(function (colIndex, event) {
-
-			// 		var filtersPlugin = featuresList.getPlugin('filters');
-
-			// 		filtersPlugin.removeConditions(colIndex);
-			// 		filtersPlugin.addCondition(colIndex, 'contains', [event.target.value]);
-			// 		filtersPlugin.filter();
-			// 		}, 200);
-
-			// 		var addEventListeners =  (input, colIndex) => {
-			// 			input.addEventListener('keydown', event => debounceFn(colIndex, event));
-			// 		};
-
-			// 	// Build elements which will be displayed in header.
-			// 	var getInitializedElements = function(colIndex) {
-
-			// 		var div = document.createElement('div');
-			// 		var input = document.createElement('input');
-			// 		input.placeholder = 'Filter by label';
-			// 		input.style.height = '100%'
-			// 		div.className = 'filterHeader';
-
-			// 		addEventListeners(input, colIndex);
-
-			// 		div.appendChild(input);
-
-			// 		return div;
-			// 	};
-
-			// 	document.querySelector('#featureFilter')
-			// 		.appendChild(getInitializedElements(0));
-			// }
-
-			// setupFilter()
 			app.constants.ui.tableColumns.timeSpansList[0].source=
 			app.constants.ui.tableColumns.timeSpansList[1].source=
 			app.utils.makeTimes();
@@ -437,7 +398,7 @@ var app = {
 				
 					data: app.state.raw.features,
 
-					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.featuresList.map(r=>r.data)),
+					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.featuresList),
 					width: '100%',
 					rowHeaders: true,
 					colHeaders: app.constants.ui.tableColumns.featuresList.map(c=>c.data),
@@ -477,8 +438,8 @@ var app = {
 
 					data: [],
 
-					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.regulationsList.map(r=>r.data)),
-					minRows:30,
+					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.regulationsList),
+					minRows:15,
 					rowHeaders: true,
 					nestedHeaders:[
 						[	
@@ -525,9 +486,9 @@ var app = {
 
 				document.getElementById('timeSpansList'), 
 				{
-					minRows:30,
+					minRows:15,
 					width:'100%',
-					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.timeSpansList.map(r=>r.data)),
+					dataSchema: app.utils.arrayToNullObj(app.constants.ui.tableColumns.timeSpansList),
 					rowHeaders: true,
 					colHeaders: true,
 					nestedHeaders:[
@@ -574,6 +535,10 @@ var app = {
 			//prevent inadvertent browser-back behavior from overscrolling
 			d3.selectAll('.section')
 				.on('wheel', ()=>event.preventDefault())
+
+			// hack to skip double-clicking on regulation checkboxes
+			d3.selectAll('#regulationsList *')
+				.on('mousedown', ()=>{event.target.click()})
 
 			setInterval(app.io.saveSurvey, 5000)
 		}
@@ -630,8 +595,6 @@ var app = {
 						else return `spans #${vIndex.map(n=>n+1).join('-')}`
 
 					})
-
-				console.log(value)
 				
 				// update regulations input call to action: rename template if currently one, create template if currently isn't
 				d3.select('#regulationPrompt')
@@ -683,7 +646,7 @@ var app = {
 				// UPDATE TIMESPANS SHEET
 				var timeSpanToRender;
 				const existingTemplate = app.state.templates.timeSpans[value.template];
-
+				// if currently selecting a template
 				if (value.template) timeSpanToRender = existingTemplate || [];
 				
 				// if currently selecting a single inline regulation
@@ -692,11 +655,13 @@ var app = {
 					const singleIF = app.state.currentRegulationTarget.inlineFeature;
 
 					// if currently selecting a single inline feature
-					if (singleIF>=0) timeSpanToRender = app.state.raw.timeSpans[singleIF+'-'+value.inlineRegulation] || []
-
+					timeSpanToRender = app.state.raw.timeSpans[singleIF+'-'+value.inlineRegulation] || []
 				}
 				
-				else if (value.inlineRegulations) timeSpanToRender = [];
+				else timeSpanToRender = [];
+
+				// render new timespans data and collapse table
+				app.ui.timeSpansList.loadData(app.utils.clone(timeSpanToRender))
 
 				// update regulations sheet heading
 
@@ -718,9 +683,6 @@ var app = {
 					.property('value', value.template || '')
 
 
-				// render new timespans data and collapse table
-				app.ui.timeSpansList.loadData(app.utils.clone(timeSpanToRender))
-
 			}
 
 
@@ -728,7 +690,6 @@ var app = {
 			else {
 
 				app.ui.timeSpansList.loadData([])	
-				app.ui.regulationsList.deselectCell()
 			}
 			
 			app.ui.collapseTables();
@@ -799,20 +760,21 @@ var app = {
 				// if selecting multiple regs
 
 				else {
-					cTT.inlineRegulations = range
-					cTT.rawRange = [];
-					var allInline = true
+					cTT = {disabledMessage:'notSelected'}
 
-					for (var f=range[0]; f<=range[1]; f++) {
-						if (rlData[f].timeSpanTemplate) allInline = false;
-						else cTT.rawRange.push(f)
-					}
+					// cTT.inlineRegulations = range
+					// cTT.rawRange = [];
+					// var allInline = true
+
+					// for (var f=range[0]; f<=range[1]; f++) {
+					// 	if (rlData[f].timeSpanTemplate) allInline = false;
+					// 	else cTT.rawRange.push(f)
+					// }
 		
-					if (!allInline) cRT = {disabledMessage: 'containsTemplate'};
+					// if (!allInline) cRT = {disabledMessage: 'containsTemplate'};
 					
 
 				}
-				const multipleFeaturesSelected = app.state.currentRegulationTarget.inlineFeatures;
 
 				// if editing
 				app.setState('currentTimeSpanTarget', cTT)
@@ -983,7 +945,6 @@ var app = {
 		onSelectingFeature: (row, column, row2, column2, preventScrolling) => {
 
 			const fL = app.ui.featuresList;
-			const flData = fL.getSourceData();
 			var range = row === row2 ? row : [row, row2]
 			if (range[1]<range[0]) range.reverse()
 
@@ -991,6 +952,8 @@ var app = {
 			const singleFeatureSelected = row === row2;
 
 			if (singleFeatureSelected) {
+				const flData = fL.getSourceData();
+
 				const physicalRow = fL.toPhysicalRow(row);
 				const templateName = flData[physicalRow].regulationTemplate;
 
@@ -1000,18 +963,24 @@ var app = {
 				else cRT.inlineFeature = physicalRow
 			}
 
-			// if multiple features selected, make sure none are templates before applying currentRegulationTarget
 			else {
-				cRT.inlineFeatures = range.map(row=>fL.toPhysicalRow(row))
-				cRT.rawRange = [];
-				var allInline = true
 
-				for (var f = range[0]; f<=range[1]; f++) {
-					if (flData[f].regulationTemplate) allInline = false;
-					else cRT.rawRange.push(f)
-				}
+				cRT = {disabledMessage:'notSelected'}
+
+				// below: deprecated logic for handling multi-row selections
+
+				// cRT.inlineFeatures = range.map(row=>fL.toPhysicalRow(row))
+				// cRT.rawRange = [];
+				// var allInline = true
+
+				// for (var f = range[0]; f<=range[1]; f++) {
+				// 	if (flData[f].regulationTemplate) allInline = false;
+				// 	else cRT.rawRange.push(f)
+				// }
 	
-				if (!allInline) cRT = {disabledMessage: 'containsTemplate'};
+				// if multiple features selected, make sure none are templates before applying currentRegulationTarget
+	
+				// if (!allInline) cRT = {disabledMessage: 'containsTemplate'};
 				
 
 			}
@@ -1020,6 +989,9 @@ var app = {
 			app.setState('currentRegulationTarget', cRT, ()=>{
 				app.setState('currentTimeSpanTarget', {disabledMessage:'notSelected'})
 			})
+
+			app.ui.regulationsList.deselectCell()
+
 			app.ui.updateRegulationsListSettings()			
 
 		},
@@ -1240,7 +1212,7 @@ var app = {
 		},
 		arrayToNullObj: (array) =>{
 			var output = {};
-			array.forEach(key=>output[key]=null)
+			array.forEach(key=>output[key.data]= key.type === 'checkbox' ? false : null)
 			return output
 		},
 
@@ -1621,4 +1593,3 @@ var app = {
 }
 
 
-	
