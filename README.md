@@ -1,4 +1,4 @@
-# curblr-digitizer
+# curbwheel-digitizer
 
 ### installation
 
