@@ -32,7 +32,6 @@
 			.section {
 				height:33.33333%;
 			    position: relative;
-			    border-top: 3px solid var(--main-color)
 			}
 
 
@@ -241,13 +240,27 @@
 			.header {
 				height:50px;
 			    line-height: 30px;
+			    border-top: 3px solid var(--main-color)
 			}
 
 			#featuresList .handsontable tbody th.ht__highlight,
-			#featuresList .htBorders * {
+			#featuresList .wtBorder {
 				filter:saturate(0.5) hue-rotate(145deg)
 			}
 
+			#regulations .header,
+			#regulations .handsontable tbody th.ht__highlight,
+			#regulations .wtBorder,
+			#features .templateStyle {
+				filter:saturate(0.5) hue-rotate(-15deg)
+			}
+
+			#timeSpans .header,
+			#timeSpans .handsontable tbody th.ht__highlight,
+			#timeSpans .wtBorder,
+			#regulations .templateStyle {
+				filter:saturate(0.5) hue-rotate(-140deg)			
+			}
 /*			#featuresList .handsontable tbody th.ht__highlight {
 				background:#333;
 			}
@@ -262,21 +275,18 @@
 		</style>
 	</head>
 	<body>
-<!-- 		<div class='headerBar p10'>
-			<span class='strong'>CurbLR Digitizer</span>
-			<span class='button z100 fr' onclick='app.io.export()'>Export</span>
-		</div> -->
+
 			<div class='col6 fullHeight scroll' id='dataPanel'>
-				<div class='section' style='border:none'>
-					<div class='header p10'>
+				<div class='section' id='features'>
+					<div class='header p10' style='border:none'>
 						Spans 
 						<div class='fr hidden' id='featureFilter'></div>
-						<span class='button z100 fr' onclick='app.io.export()' style='padding:0px 10px'>Export</span>
+						<span class='button z100 fr' onclick='app.io.export()' style='padding:0px 10px; background:#666'>Export</span>
 					</div>
 					<div id='featuresList' class='sheet'>
 					</div>
 				</div>
-				<div class='section' style='filter:saturate(0.5) hue-rotate(-15deg)' disabled='notSelected' id='regulations'>
+				<div class='section' disabled='notSelected' id='regulations'>
 					<div class='header p10'>
 						<span class='prompt'>Regulations of</span>
 						<span class='currentTarget'></span> 
@@ -287,7 +297,7 @@
 							<form autocomplete="off" class='inlineBlock' onsubmit='return app.ui.regulationInputSubmit()'>
 
 								<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
-								<input type='submit' class='button fr' style='padding:0px 10px; border-radius:0px; height:100%' value='➔'/>
+								<input type='submit' class='button fr' value='➔'/>
 							</form>
 							</div>
 						</div>	
@@ -295,7 +305,7 @@
 					<div id='regulationsList' class='sheet'>
 					</div>
 				</div>
-				<div class='section' style='filter:saturate(0.5) hue-rotate(-140deg)' disabled='notSelected' id='timespans'>
+				<div class='section' disabled='notSelected' id='timespans'>
 					<div class='header p10' >
 							<span class='prompt'>Timespans of</span>
 							<span class='currentTarget'></span> 

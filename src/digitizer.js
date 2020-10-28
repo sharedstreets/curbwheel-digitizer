@@ -1419,7 +1419,7 @@ var app = {
 					},
 					left: {
 						width: 2,
-						color: 'maroon'
+						color: 'rgb(75, 137, 255)'
 					}
 				},
 				{
@@ -1435,7 +1435,7 @@ var app = {
 					},
 					left: {
 						width: 2,
-						color: 'maroon'
+						color: 'rgb(75, 137, 255)'
 					}
 				},
 				{
@@ -1451,7 +1451,7 @@ var app = {
 					},
 					left: {
 						width: 2,
-						color: 'maroon'
+						color: 'rgb(75, 137, 255)'
 					}
 				},
 			],
