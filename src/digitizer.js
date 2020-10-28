@@ -82,7 +82,8 @@ var app = {
 						shstLocationStart: ft.properties.dst_st,
 						shstLocationEnd: ft.properties.dst_end,
 						assetType: featuresData[i].assetType,
-						assetSubtype: featuresData[i].assetSubType,
+						assetSubtype: featuresData[i].assetSubtype,
+						feat_id: ft.properties['feat_id']
 					},
 
 					regulations: regs.map((reg, rIndex) => {
@@ -154,14 +155,12 @@ var app = {
 
 			for (feature of exportedData.features){
 				const locationProps = feature.properties.location;
-				console.log(locationProps.shstRefId)
-				assetLookupTable[locationProps.shstRefId] = {type: locationProps.assetType, subtype:locationProps.assetSubtype }
-				// console.log(JSON.stringify(assetLookupTable))
+				assetLookupTable[locationProps['feat_id']] = {type: locationProps.assetType, subtype:locationProps.assetSubtype }
 			}
 
-			for (asset of app.state.assetExport.features) {
 
-				const targetFeature = assetLookupTable[asset.properties['shst_ref_id']];
+			for (asset of app.state.assetExport.features) {
+				const targetFeature = assetLookupTable[asset.properties['feat_id']];
 				asset.properties.assetType = targetFeature.type;
 				asset.properties.assetSubtype = targetFeature.subtype
 			}
@@ -291,7 +290,7 @@ var app = {
 
 				const geometry = app.state.inputSurvey;
 
-				map.fitBounds(turf.bbox(geometry), {duration:200, padding:100});
+				map.fitBounds(turf.bbox(geometry), {duration:2, padding:100});
 				map
 					.addLayer({
 						id: 'spans', 
@@ -520,23 +519,16 @@ var app = {
 			)
 
 
-			// bind input behavior
-			d3.select('#regulationInput')
-				.on('keyup', e=>app.ui.updateRegulationInput(event))
-			d3.select('#timeSpanInput')
-				.on('keyup', e=>app.ui.updateTimeSpanInput(event))
-
-
 			app.ui.featuresList = featuresList;
 			app.ui.regulationsList = regulationsList;
 			app.ui.timeSpansList = timeSpansList;
 
 			app.ui.collapseTables();
-			//prevent inadvertent browser-back behavior from overscrolling
+			//prevent inadvertent browser-back behavior when overscrolling
 			d3.selectAll('.section')
 				.on('wheel', ()=>event.preventDefault())
 
-			// hack to skip double-clicking on regulation checkboxes
+			// hack to work around afterSelectionEnd's focus stealing on regulation checkboxes
 			d3.selectAll('#regulationsList *')
 				.on('mousedown', ()=>{event.target.click()})
 
@@ -556,11 +548,12 @@ var app = {
 			images.selectAll('img').remove()
 
 			//if selecting single row, update images
-			if (value.inlineFeature) {			
+			if (value.inlineFeature >= 0) {			
 
 				images
 					.selectAll('img')
 					.data(
+
 						app.state.inputSurvey.features[value.inlineFeature]
 							.properties.images
 					)
@@ -638,7 +631,9 @@ var app = {
 			d3.select('#timespans')
 				.attr('disabled', value.disabledMessage || undefined)
 
-			if (!value.disabledMessage) {
+			if (value.disabledMessage) app.ui.timeSpansList.loadData([])
+
+			else {
 
 				const vIndex = value.visualRange;
 				const singleRowSelected = typeof vIndex === 'number';
@@ -671,8 +666,8 @@ var app = {
 						
 						if (value.template) return undefined
 
-						else if (singleRowSelected) return `span #${vIndex+1}`
-						else return `spans #${vIndex.map(n=>n+1).join('-')}`
+						else if (singleRowSelected) return `regulation #${vIndex+1}`
+						else console.log('deprecated')//return `spans #${vIndex.map(n=>n+1).join('-')}`
 
 					})
 				//update regulations input call to action: rename template if currently one, create template if currently isn't
@@ -685,12 +680,6 @@ var app = {
 
 			}
 
-
-			// if disabled value, clear timespans sheet
-			else {
-
-				app.ui.timeSpansList.loadData([])	
-			}
 			
 			app.ui.collapseTables();
 
@@ -814,12 +803,10 @@ var app = {
 		},
 
 		// apply change to input element
-		updateTimeSpanInput: (e) =>{
+		timeSpanInputSubmit: () =>{
 
-			//on enter
-			if (e.which === 13) {
 
-				const text = e.target.value;
+				const text = d3.select('#timespanInput').property('value');
 				const cTT = app.state.currentTimeSpanTarget
 
 				// throw on name collision
@@ -828,7 +815,7 @@ var app = {
 					return
 				}
 
-				e.target.blur();
+				// e.target.blur();
 
 				var oldData = app.ui.regulationsList.getSourceData();
 
@@ -877,68 +864,67 @@ var app = {
 				app.ui.updateTemplateTypeahead('timeSpans')
 				app.ui.collapseTables()
 
-			}
+				return false
 		},
 
 		// apply change to input element
-		updateRegulationInput: (e) =>{
+		regulationInputSubmit: () =>{
 
-			//on enter
-			if (e.which === 13) {
+			const input = d3.select('#regulationInput');
+			const text = input.property('value');
+			const cRT = app.state.currentRegulationTarget
 
-				const text = e.target.value;
-				const cRT = app.state.currentRegulationTarget
-
-				// throw on name collision
-				if (app.state.templates.regulations[text]) {
-					alert('A template by this name already exists. Please choose a new one.')
-					return
-				}
-
-				e.target.blur();
-
-				var fLData = app.ui.featuresList.getSourceData();
-
-				// if editing a template
-				if (cRT.template){
-
-					const oldTemplateName = cRT.template;
-
-					// copy template over and delete old template key
-					app.state.templates.regulations[text] = app.state.templates.regulations[oldTemplateName] || [];
-					delete app.state.templates.regulations[oldTemplateName];
-
-					//change all references of old template, to new
-
-					fLData.forEach(row=>{
-						if (row.regulationTemplate===oldTemplateName) row.regulationTemplate = text
-					})
-
-				}
-
-				// if creating a template from inline
-				else {
-
-					//create new template with whatever's currently in the regulationslist
-					app.state.templates.regulations[text] = app.ui.regulationsList.getSourceData()
-
-					// apply template to active feature(s)
-					const iFs = cRT.inlineFeatures
-					if (iFs) console.log('deprecated')//for (var f=iFs[0]; f<=iFs[1]; f++) fLData[f].regulationTemplate = text;
-					else fLData[cRT.inlineFeature].regulationTemplate = text;
-
-				}
-
-				const newCRT = {
-					template:text, 
-					rawRange:cRT.rawRange
-				}
-
-				app.setState('currentRegulationTarget', newCRT)
-				app.ui.updateTemplateTypeahead('regulations')
-				app.ui.featuresList.loadData(fLData);
-				app.state.raw.features = fLData;
+			// throw on name collision
+			if (app.state.templates.regulations[text]) {
+				alert('A template by this name already exists. Please choose a new one.')
+				input.node().focus();
+				return false
 			}
+
+			input.node().blur();
+			var fLData = app.ui.featuresList.getSourceData();
+
+			// if editing a template
+			if (cRT.template){
+
+				const oldTemplateName = cRT.template;
+
+				// copy template over and delete old template key
+				app.state.templates.regulations[text] = app.state.templates.regulations[oldTemplateName] || [];
+				delete app.state.templates.regulations[oldTemplateName];
+
+				//change all references of old template, to new
+
+				fLData.forEach(row=>{
+					if (row.regulationTemplate===oldTemplateName) row.regulationTemplate = text
+				})
+
+			}
+
+			// if creating a template from inline
+			else {
+
+				//create new template with whatever's currently in the regulationslist
+				app.state.templates.regulations[text] = app.ui.regulationsList.getSourceData()
+
+				// apply template to active feature(s)
+				const iFs = cRT.inlineFeatures
+				if (iFs) console.log('deprecated')//for (var f=iFs[0]; f<=iFs[1]; f++) fLData[f].regulationTemplate = text;
+				else fLData[cRT.inlineFeature].regulationTemplate = text;
+
+			}
+
+			const newCRT = {
+				template:text, 
+				rawRange:cRT.rawRange
+			}
+
+			app.setState('currentRegulationTarget', newCRT)
+			app.ui.updateTemplateTypeahead('regulations')
+			app.ui.featuresList.loadData(fLData);
+			app.state.raw.features = fLData;
+		
+			return false
 		},
 
 
@@ -1038,9 +1024,6 @@ var app = {
 							// if subtype not allowed, clear value
 							else cellsToClear.push([row, col])		
 					    }
-						
-						// else if (col === 4) app.ui.updateTemplateTypeahead('regulations')
-
 
 					    return cellProperties;
 					}
@@ -1286,7 +1269,7 @@ var app = {
 					{
 						data: 'regulationTemplate',
 						type: 'text',
-						className:' steelblue',
+						className:' templateStyle',
 						placeholder: 'Unique values'
 					}
 				],
@@ -1347,7 +1330,7 @@ var app = {
 					{data: 'priorityCategory'},					
 					{
 						data: 'timeSpanTemplate',
-						className:' maroon',
+						className:' templateStyle',
 						placeholder: 'Unique values'
 					}
 				],
@@ -1420,7 +1403,7 @@ var app = {
 					},
 					left: {
 						width: 2,
-						color: 'maroon'
+						color: 'rgb(75, 137, 255)'
 					}
 				},
 				{

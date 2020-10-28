@@ -16,6 +16,11 @@
 				font-family: Verdana, Helvetica, Arial, sans-serif;
 				font-weight: 400
 			}
+
+			:root {
+				--main-color:rgb(75, 137, 255);
+			}
+
 			.headerBar {
 				border-bottom:2px solid #aaa;
 			}
@@ -27,6 +32,7 @@
 			.section {
 				height:33.33333%;
 			    position: relative;
+			    border-top: 3px solid var(--main-color)
 			}
 
 
@@ -42,11 +48,11 @@
 			}
 
 			#regulations[disabled='notSelected'] .header:after {
-				content:'☝ Select a span above to edit its regulations';
+				content:'Select a span above to edit its regulations';
 			}
 
 			#timespans[disabled='notSelected'] .header:after {
-				content:'☝ Select a regulation above to edit its timespans';
+				content:'Select a regulation above to edit its timespans';
 			}
 			#regulations[disabled='containsTemplate'] .header:after,
 			#timespans[disabled='containsTemplate'] .header:after {
@@ -74,11 +80,11 @@
 			}
 
 			#regulations .currentTarget[type]:after{
-				background:steelblue;
+				background:var(--main-color);
 			}
 
 			#timespans .currentTarget[type]:after{
-				background:maroon;
+				background:var(--main-color);
 			}
 
 			.image {
@@ -102,9 +108,18 @@
 				display: inline-block
 			}
 
-			input {
+			input,
+			input:focus {
+				outline:none;
 				border: none;
 				background:#f3f3f3;
+			}
+
+			input[type='submit'] {
+				padding:0px 10px; 
+				border-radius:0px; 
+				height:100%;
+				background:var(--main-color);
 			}
 
 			/*custom style overrides*/
@@ -171,14 +186,6 @@
 			.htDimmed .htAutocompleteArrow {
 				display:none;
 			}
-			.handsontable th > div.filterHeader {
-			  margin-bottom:10px;
-			}
-
-			.handsontable th > div.filterHeader > input {
-			  box-shadow: none;
-			  border: 1px solid #CCC;
-			}
 
 			.collapsibleIndicator {
 				line-height: 9px;
@@ -195,6 +202,34 @@
 				color:white;
 			}
 
+			.templateText {
+				padding: 2px 6px;
+				border-radius: 3px;
+    			color:white !important;
+			}
+
+			.handsontable td.templateStyle {
+				color:var(--main-color);
+				font-weight:bold;
+			}
+
+			.handsontable td.maroon {
+				color:maroon;
+			}
+			
+			.handsontable .htPlaceholder {
+				color: #999 !important;
+				font-style: italic;
+				font-weight: 100 !important;
+			}
+
+			.handsontable tbody th.ht__highlight {
+				color:white;
+				font-weight:bold;
+				background: var(--main-color);
+			}
+
+
 			.invisible {
 				opacity:0.75;
 			}
@@ -208,26 +243,22 @@
 			    line-height: 30px;
 			}
 
-
-			.templateText {
-				padding: 2px 6px;
-				border-radius: 3px;
-    			color:white !important;
+			#featuresList .handsontable tbody th.ht__highlight,
+			#featuresList .htBorders * {
+				filter:saturate(0.5) hue-rotate(145deg)
 			}
 
-			.handsontable td.steelblue {
-				color:steelblue;
+/*			#featuresList .handsontable tbody th.ht__highlight {
+				background:#333;
 			}
 
-			.handsontable td.maroon {
-				color:maroon;
+			#regulationsList .handsontable tbody th.ht__highlight {
+				background: var(--main-color);
 			}
-			
-			.handsontable .htPlaceholder {
-				color: #999 !important;
-				font-style: italic;
-				font-weight: 100 !important;
-			}
+
+			#timeSpansList .handsontable tbody th.ht__highlight {
+				background: maroon;
+			}*/
 		</style>
 	</head>
 	<body>
@@ -236,43 +267,45 @@
 			<span class='button z100 fr' onclick='app.io.export()'>Export</span>
 		</div> -->
 			<div class='col6 fullHeight scroll' id='dataPanel'>
-				<div class='section' style='border-bottom:3px solid steelblue'>
+				<div class='section' style='border:none'>
 					<div class='header p10'>
 						Spans 
 						<div class='fr hidden' id='featureFilter'></div>
-			<span class='button z100 fr' onclick='app.io.export()' style='padding:0px 10px'>Export</span>
+						<span class='button z100 fr' onclick='app.io.export()' style='padding:0px 10px'>Export</span>
 					</div>
 					<div id='featuresList' class='sheet'>
 					</div>
 				</div>
-				<div class='section' style='border-bottom: 3px solid maroon' disabled='notSelected' id='regulations'>
+				<div class='section' style='filter:saturate(0.5) hue-rotate(-15deg)' disabled='notSelected' id='regulations'>
 					<div class='header p10'>
-						<span class='prompt'>☝ Regulations of</span>
+						<span class='prompt'>Regulations of</span>
 						<span class='currentTarget'></span> 
 						<!-- <span id='featureIndex' class='strong descriptor' style='color:steelblue'></span> -->
 						<div class='fr templateInput'>
 							<span id='regulationPrompt' class='small quiet'>Make this a template</span>
 							<div class='inlineBlock'>
+							<form autocomplete="off" class='inlineBlock' onsubmit='return app.ui.regulationInputSubmit()'>
 
 								<input id='regulationInput' placeholder="Name" style="height: 100%;"/>
-								<span onclick='' class='button fr' style='padding:0px 10px; border-radius:0px'>➔</span>
+								<input type='submit' class='button fr' style='padding:0px 10px; border-radius:0px; height:100%' value='➔'/>
+							</form>
 							</div>
 						</div>	
 					</div>
 					<div id='regulationsList' class='sheet'>
 					</div>
 				</div>
-				<div class='section' disabled='notSelected' id='timespans'>
+				<div class='section' style='filter:saturate(0.5) hue-rotate(-140deg)' disabled='notSelected' id='timespans'>
 					<div class='header p10' >
-							<span class='prompt'>☝ Timespans of</span>
+							<span class='prompt'>Timespans of</span>
 							<span class='currentTarget'></span> 
 
 						<div class='fr templateInput'>
 							<span id='timeSpanPrompt' class='small quiet'>Make this a template</span>
-							<div class='inlineBlock'>
-								<input id='timeSpanInput' placeholder="Name" style="height: 100%;"/>
-								<span onclick='' class='button fr' style='padding:0px 10px; border-radius:0px; background:maroon'>➔</span>
-							</div>
+							<form autocomplete="off" class='inlineBlock' onsubmit='return app.ui.timeSpanInputSubmit()'>
+								<input id='timeSpanInput' placeholder="Name" style="height: 100%;" />
+								<input type='submit' class='button fr' value='➔'/>
+							</form>
 						</div>					
 					</div>
 					<div id='timeSpansList' class='sheet'>
@@ -287,7 +320,7 @@
 				</div>		
 			</div>
 	</body>
-	<script src="https://cdn.jsdelivr.net/npm/handsontable@8.0.0/dist/handsontable.full.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/handsontable@8.0.0/dist/handsontable.full.js"></script>
 	<script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
 	<script src='src/digitizer.js'></script>
 	<script src="https://d3js.org/d3.v4.min.js"></script>
