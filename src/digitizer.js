@@ -1567,7 +1567,7 @@ var app = {
 		],
 		manifest:{
 			"createdDate": new Date().toISOString(),
-			"lastUpdatedDate": "2020-10-10T17:40:45Z",
+			"lastUpdatedDate": new Date().toISOString(),
 			"priorityHierarchy": [
 				"no standing",
 				"construction",
