@@ -21,7 +21,7 @@ var app = {
 
 			var output = data.filter(row => {
 				const entries = Object.entries(row).map(keyValuePair=>keyValuePair[1]);
-				return entries.filter(item => !item).length>0
+				return entries.filter(item => !!item && item.length > 0).length>0
 			})
 
 			return output
@@ -75,12 +75,20 @@ var app = {
 					regulation.timeSpans = cull(app.io.resolveTemplateReference('timeSpan', regulation, [i, rIndex]))
 				})
 
+				// remove any spans that don't have an activity defined - these aren't valid CurbLR or useful, and we need a way to "throw away" bad survey data
+				if (!regs.some(r => r.activity)) {
+					return;
+				}
+
+
+				ft.geometry.coordinates = ft.geometry.coordinates.map(vt => vt.map(c => parseFloat(c.toFixed(6))));
+
 				ft.properties = {
 
 					location: {
 						shstRefId: ft.properties['shst_ref_id'],
-						shstLocationStart: ft.properties.dst_st,
-						shstLocationEnd: ft.properties.dst_end,
+						shstLocationStart: ft.properties.dst_st && parseFloat(ft.properties.dst_st.toFixed(1)),
+						shstLocationEnd: ft.properties.dst_end && parseFloat(ft.properties.dst_end.toFixed(1)),
 						assetType: featuresData[i].assetType,
 						assetSubtype: featuresData[i].assetSubtype,
 						feat_id: ft.properties['feat_id']
@@ -93,23 +101,26 @@ var app = {
 							rule: {
 								activity: reg.activity,
 								maxStay: reg.maxStay,
-								userClasses: reg.userClasses,
-								userSubClasses: reg.userSubClasses,
+								userClasses: reg.userClasses || [],
+								userSubclasses: reg.userSubclasses || [],
 								priorityCategory: reg.priorityCategory,
 								payment: reg.payment
 							},
 
 							payment: !reg.payment ? undefined : {
-								rates: reg.rates,
-								durations: reg.durations,
-								methods: reg.methods,
-								forms: reg.forms,
-								phone: reg.phone,
-								operator: reg.operator
+								rates: [
+									{
+										fees: (reg.fees || "").split(",").map(x => Number.isNaN(Number(x)) ? x : Number(x)),
+										durations: (reg.durations || "").split(",").map(x => Number.isNaN(Number(x)) ? x : Number(x))
+									}	
+								],
+								methods: (reg.methods || "").split(",").map(x => x.trim()),
+								forms: (reg.forms || "").split(",").map(x => x.trim()),
+								phone: reg.phone || "",
+								operator: reg.operator || ""
 							},
 
 							timeSpans: reg.timeSpans.map(span => {
-
 								var tS = {
 
 									//form arrays of daysOfWeek and month occurrences
@@ -119,14 +130,19 @@ var app = {
 									},
 
 									//single pair of from-to times
-									timesOfDay:[{
+									timesOfDay: !(span.start && span.end) ? [] : [{
 										from: span.start,
 										to: span.end
 									}],
 
-									effectiveDates:[{
-										from: span.from,
-										to: span.end
+									effectiveDates: !(span.from && span.to) ? [] : [{
+										from: new Date(span.from).toISOString().split("T")[0],
+										to: new Date(span.to).toISOString().split("T")[0]
+									}],
+
+									designatedPeriods: !(span.apply && span.eventName) ? [] : [{
+										apply: span.apply,
+										name: span.eventName
 									}]
 								}
 
@@ -140,12 +156,13 @@ var app = {
 
 				return ft
 			})
-
+			// remove non-existent features (filtered because they don't have any regulations with activities)
+			.filter(x => !!x);
 
 			exportedData = {
+				"manifest": app.constants.manifest,
 				"type": "FeatureCollection",
 				"features": exportedData,
-				"manifest": app.constants.manifest
 			}
 			console.log(exportedData)
 
@@ -161,8 +178,10 @@ var app = {
 
 			for (asset of app.state.assetExport.features) {
 				const targetFeature = assetLookupTable[asset.properties['feat_id']];
-				asset.properties.assetType = targetFeature.type;
-				asset.properties.assetSubtype = targetFeature.subtype
+				if (targetFeature) {
+					asset.properties.assetType = targetFeature.type;
+					asset.properties.assetSubtype = targetFeature.subtype;
+				}
 			}
 
 			app.io.downloadItem(exportedData, 'curblr_'+Date.now()+'.json');
@@ -501,7 +520,7 @@ var app = {
 							{label: 'week', colspan:7},
 							{label: 'month', colspan:6},
 							{label: 'date range', colspan:2},
-							{label: 'event', colspan:2},
+							{label: 'designated period', colspan:2},
 						],
 						
 						app.constants.ui.tableColumns.timeSpansList.map(t=>t.data)
@@ -1218,7 +1237,7 @@ var app = {
 	},
 
 	constants: {
-		paymentParams: ['rates', 'durations', 'methods', 'forms', 'phone', 'operator'],
+		paymentParams: ['fees', 'durations', 'methods', 'forms', 'phone', 'operator'],
 		daysOfWeek: ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'],
 		occurrencesInMonth: ['1st', '2nd', '3rd', '4th', '5th', 'last'],
 		ui: {
@@ -1281,7 +1300,7 @@ var app = {
 						width:60
 					},	
 					{
-						data: 'rates',
+						data: 'fees',
 						readOnly: true
 					},
 					{
@@ -1326,7 +1345,7 @@ var app = {
 						visibleRows: 15
 					},
 					{data: 'userClasses'},
-					{data: 'userSubClasses'},					
+					{data: 'userSubclasses'},					
 					{data: 'priorityCategory'},					
 					{
 						data: 'timeSpanTemplate',
@@ -1379,15 +1398,18 @@ var app = {
 						}
 					})
 				)
-				.concat(['apply', 'event']
-					.map(item=>{
-						return {
-							data: item,
-							type: 'text',
-							width:80
-						}
-					})
-				)
+				.concat({
+					data: 'apply',
+					type: 'dropdown',
+					source: ['only during', 'except during'],
+					strict: true,
+				})
+				.concat({
+					data: 'eventName',
+					label: 'event name',
+					type: 'text',
+					width: 80
+				})
 			},
 			timeSpanBorderScheme: [
 				{
@@ -1545,7 +1567,7 @@ var app = {
 		],
 		manifest:{
 			"createdDate": new Date().toISOString(),
-			"lastUpdatedDate": "2020-10-10T17:40:45Z",
+			"lastUpdatedDate": new Date().toISOString(),
 			"priorityHierarchy": [
 				"no standing",
 				"construction",
