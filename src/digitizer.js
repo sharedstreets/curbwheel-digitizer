@@ -192,7 +192,8 @@ var app = {
 			app.state.lastSaveTime = Date.now();
 			localStorage.setItem(`survey-${app.state.rootPath}`, JSON.stringify(app.state))
 			localStorage.setItem('lastSaveTime', Date.now())
-
+			console.log('state')
+			console.log(app.state)
 			console.log('saved')
 		},
 
@@ -914,10 +915,15 @@ var app = {
 
 			}
 
+			let newCRT = cRT;
+			newCRT.template = text;
+			console.log(newCRT)
+			/*
 			const newCRT = {
 				template:text, 
 				rawRange:cRT.rawRange
 			}
+			*/
 
 			app.setState('currentRegulationTarget', newCRT)
 			app.ui.updateTemplateTypeahead('regulations')
@@ -946,8 +952,10 @@ var app = {
 
 				cRT.rawRange = physicalRow
 
-				if (templateName) cRT.template = templateName
-				else cRT.inlineFeature = physicalRow
+				if (templateName) {
+					cRT.template = templateName
+				}
+				cRT.inlineFeature = physicalRow
 			}
 
 			else {
