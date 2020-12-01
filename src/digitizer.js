@@ -89,9 +89,10 @@ var app = {
 						shstRefId: ft.properties['shst_ref_id'],
 						shstLocationStart: ft.properties.dst_st && parseFloat(ft.properties.dst_st.toFixed(1)),
 						shstLocationEnd: ft.properties.dst_end && parseFloat(ft.properties.dst_end.toFixed(1)),
+						sideOfStreet: ft.properties.ref_side,
 						assetType: featuresData[i].assetType,
 						assetSubtype: featuresData[i].assetSubtype,
-						feat_id: ft.properties['feat_id']
+						objectId: ft.properties['feat_id']
 					},
 
 					regulations: regs.map((reg, rIndex) => {
